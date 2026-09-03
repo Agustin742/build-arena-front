@@ -44,3 +44,13 @@ Todo lo que empieza con `VITE_` se compila dentro del bundle y es público. Acá
 | Variable       | Para qué           |
 | -------------- | ------------------ |
 | `VITE_API_URL` | URL base de la API |
+
+## Despliegue
+
+Vercel, conectado al repositorio. Cada push a `main` publica producción y cada pull request publica
+una vista previa.
+
+`vercel.json` reescribe toda ruta a `/index.html`. Sin eso, recargar `/battles/42` devuelve 404: el
+hosting busca un archivo que no existe. La aplicación es una SPA y el ruteo vive en el cliente.
+
+`VITE_API_URL` se configura en el panel de Vercel para _Production_, _Preview_ y _Development_.
