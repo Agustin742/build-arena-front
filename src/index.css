@@ -1,16 +1,20 @@
 @import 'tailwindcss';
 
 :root {
-  --console-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --console-font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
-  --console-background: #000000;
-  --console-surface: #000000;
-  --console-border: #ffffff;
-  --console-text: #ffffff;
-  --console-text-dim: #ffffff;
-  --console-accent: #ffffff;
-  --console-error: #ffffff;
-  --console-success: #ffffff;
+  --console-background: #08090a;
+  --console-surface: #0e1013;
+  --console-border: #262b31;
+  --console-border-strong: #3b434c;
+  --console-text: #d7dce1;
+  --console-text-dim: #79828c;
+  --console-accent: #e0a83c;
+  --console-error: #e0574a;
+  --console-success: #5fb98a;
+
+  --console-line-height: 1.55;
 }
 
 @theme inline {
@@ -19,11 +23,23 @@
   --color-background: var(--console-background);
   --color-surface: var(--console-surface);
   --color-border: var(--console-border);
+  --color-border-strong: var(--console-border-strong);
   --color-text: var(--console-text);
   --color-text-dim: var(--console-text-dim);
   --color-accent: var(--console-accent);
   --color-error: var(--console-error);
   --color-success: var(--console-success);
+
+  --text-xs: 0.6875rem;
+  --text-xs--line-height: var(--console-line-height);
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: var(--console-line-height);
+  --text-base: 0.875rem;
+  --text-base--line-height: var(--console-line-height);
+  --text-lg: 1rem;
+  --text-lg--line-height: var(--console-line-height);
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.3;
 
   --radius-none: 0;
 }
@@ -32,6 +48,7 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  border-radius: 0;
 }
 
 html,
@@ -45,4 +62,43 @@ body {
   background-color: var(--console-background);
   color: var(--console-text);
   font-family: var(--console-font-mono);
+  font-size: 0.875rem;
+  line-height: var(--console-line-height);
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--console-accent);
+  outline-offset: 1px;
+}
+
+::selection {
+  background-color: var(--console-accent);
+  color: var(--console-background);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes console-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.console-caret {
+  animation: console-caret 1.1s step-end infinite;
 }
