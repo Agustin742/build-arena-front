@@ -1,3 +1,33 @@
+@import 'tailwindcss';
+
+:root {
+  --console-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --console-background: #000000;
+  --console-surface: #000000;
+  --console-border: #ffffff;
+  --console-text: #ffffff;
+  --console-text-dim: #ffffff;
+  --console-accent: #ffffff;
+  --console-error: #ffffff;
+  --console-success: #ffffff;
+}
+
+@theme inline {
+  --font-mono: var(--console-font-mono);
+
+  --color-background: var(--console-background);
+  --color-surface: var(--console-surface);
+  --color-border: var(--console-border);
+  --color-text: var(--console-text);
+  --color-text-dim: var(--console-text-dim);
+  --color-accent: var(--console-accent);
+  --color-error: var(--console-error);
+  --color-success: var(--console-success);
+
+  --radius-none: 0;
+}
+
 *,
 *::before,
 *::after {
@@ -12,4 +42,7 @@ body,
 
 body {
   margin: 0;
+  background-color: var(--console-background);
+  color: var(--console-text);
+  font-family: var(--console-font-mono);
 }
