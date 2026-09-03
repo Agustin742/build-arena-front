@@ -211,8 +211,8 @@ export interface Command {
   label: string
   aliases: string[]
   args: CommandArg[]
-  scope: CommandScope
-  isEnabled: (ctx: CommandContext) => boolean
+  scope: CommandScope[]
+  availability: (ctx: CommandContext) => CommandAvailability
   run: (args: ParsedArgs, ctx: CommandContext) => Promise<CommandResult>
 }
 ```
@@ -223,7 +223,7 @@ export interface Command {
 | `aliases` | Lo que acepta el prompt de texto | `build new`, `bn` |
 | `args` | Genera **los dos**: el formulario guiado y la firma tipeada | `<name>` |
 | `scope` | Qué comandos existen en cada estado | `anonymous`, `lobby`, `battle`, `reaction-window` |
-| `isEnabled` | Se muestra deshabilitado, no se esconde | sin builds no se puede desafiar |
+| `availability` | Se muestra deshabilitado, no se esconde | sin builds no se puede desafiar |
 
 Del registro salen dos consumidores y ninguno duplica lógica:
 
@@ -235,7 +235,7 @@ Un `pick` no obliga a tipear un uuid: por clic abre un selector con `options()`,
 el número de la última lista mostrada. **El mapa `número → id` de esa lista vive en el contexto del
 registro**, no en el componente que la pintó.
 
-`isEnabled` devolviendo `false` **muestra la opción atenuada con su motivo, no la esconde.** Esconder
+`availability` devolviendo `{ enabled: false }` **muestra la opción atenuada con su motivo, no la esconde.** Esconder
 opciones deja al jugador sin saber que existen; es la misma decisión que tomar con las habilidades
 bloqueadas del asistente de build.
 
