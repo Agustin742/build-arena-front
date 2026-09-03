@@ -77,7 +77,7 @@ describe('Countdown', () => {
     expect(screen.getByTestId('countdown-track')).toHaveTextContent('█████░░░░░')
   })
 
-  it('restarts when the server opens a new window', () => {
+  it('restarts from scratch when the server opens a new window, which is keyed apart', () => {
     const { rerender } = render(<Countdown remainingMs={15000} />)
 
     advance(10000)

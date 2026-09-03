@@ -1,4 +1,6 @@
 export { type CommandItem, CommandList } from './CommandList'
+export { Countdown } from './Countdown'
+export { LogLine, type LogTone } from './LogLine'
 export { Panel } from './Panel'
 export { Prompt } from './Prompt'
 export { StatBar, type StatCondition } from './StatBar'
