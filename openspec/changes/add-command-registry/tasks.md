@@ -179,7 +179,12 @@ succeeded, `dist/` emitted. `src/shared/ui/**` untouched, not part of this diff.
 Branch `feat/commands-text-resolver`, branched locally from `feat/add-command-registry`. Ships typed
 resolution: numbered picks, alias suggestions, and the `resolve()` entry point.
 
-### 2.1 — `numbered.ts`
+**Status: ✅ Complete — tasks 2.1-2.5 done.** `pnpm test` 28 files / 249 tests passing (baseline was
+25 files / 233 tests). `pnpm build` green. Total authored diff across 6 new/modified files
+(`numbered.ts`, `numbered.test.ts`, `suggest.ts`, `suggest.test.ts`, `resolve.ts`, `resolve.test.ts`,
+`index.ts`), under the 400-line budget.
+
+### [x] 2.1 — `numbered.ts`
 Requirement: Numbered Pick Resolution, Staleness, and Invalidation (rendering half — key allocation,
 lookup, generation).
 
@@ -195,7 +200,7 @@ lookup, generation).
 Note: `SKIP_ID`/`CANCEL_ID` themselves are defined in `pending.ts` (slice 3, task 3.1); `numbered.ts`
 only references the ids as opaque strings agreed by contract with design.md.
 
-### 2.2 — `suggest.ts`
+### [x] 2.2 — `suggest.ts`
 Requirement: Alias Resolution and Unknown-Alias Suggestions (typo scenario).
 
 - 2.2.1 Test: a near-miss alias (e.g. `atack` vs. `attack`) yields `attack` as a candidate.
@@ -203,7 +208,7 @@ Requirement: Alias Resolution and Unknown-Alias Suggestions (typo scenario).
 - 2.2.2 Implement the private nearest-alias candidate function. Never re-exported from the barrel.
   Commit: `feat(commands): add alias suggestion candidates`
 
-### 2.3 — `resolve.ts`
+### [x] 2.3 — `resolve.ts`
 Requirement: Alias Resolution and Unknown-Alias Suggestions (known-alias scenario); Numbered Pick
 Resolution, Staleness, and Invalidation (`stale-number` outcome).
 
@@ -217,14 +222,18 @@ Resolution, Staleness, and Invalidation (`stale-number` outcome).
   `suggest.ts`'s candidates.
   Commit: `feat(commands): add text resolver with alias suggestions`
 
-### 2.4 — Barrel (extend)
+### [x] 2.4 — Barrel (extend)
 Add `resolve`, `numberCommands`, `numberOptions`, `EMPTY_NUMBERED_LIST` to `index.ts`. `suggest` and
 `numbered.ts`'s key allocator stay private.
 
 - Commit: `feat(commands): export resolver and numbered list from barrel`
 
-### 2.5 — Slice 2 green check
+### [x] 2.5 — Slice 2 green check
 Run `pnpm test` and `pnpm build` on the branch (slice 1 + slice 2 files); both must pass.
+
+Verified: `pnpm test` → 28 test files / 249 tests passing (baseline before this slice: 25 files /
+233 tests; +3 files, +16 tests, all in `src/shared/commands/`). `pnpm build` → `tsc -b && vite build`
+succeeded, `dist/` emitted. `src/shared/ui/**` untouched, not part of this diff.
 
 ---
 
