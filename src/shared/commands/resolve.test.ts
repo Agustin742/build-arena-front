@@ -6,6 +6,7 @@ import { resolve } from './resolve'
 import {
   type Command,
   type CommandArg,
+  type CommandAvailability,
   type CommandContext,
   type CommandScope,
   type NumberedList,
@@ -16,7 +17,7 @@ function makeCommand(params: {
   aliases: readonly string[]
   scope?: readonly CommandScope[]
   args?: readonly CommandArg[]
-  availability?: (ctx: CommandContext) => ReturnType<typeof available> | ReturnType<typeof blocked>
+  availability?: (ctx: CommandContext) => CommandAvailability
 }): Command {
   return {
     id: params.id,
