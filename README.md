@@ -25,17 +25,19 @@ pnpm dev
 
 ## Scripts
 
-| Script | Qué hace |
-| --- | --- |
-| `pnpm dev` | Servidor de desarrollo |
-| `pnpm build` | Chequeo de tipos y build de producción |
-| `pnpm preview` | Sirve el build de producción |
-| `pnpm typecheck` | Solo chequeo de tipos |
+| Script           | Qué hace                               |
+| ---------------- | -------------------------------------- |
+| `pnpm dev`       | Servidor de desarrollo                 |
+| `pnpm build`     | Chequeo de tipos y build de producción |
+| `pnpm preview`   | Sirve el build de producción           |
+| `pnpm typecheck` | Solo chequeo de tipos                  |
+| `pnpm lint`      | ESLint sobre todo el proyecto          |
+| `pnpm format`    | Prettier sobre el código               |
 
 ## Variables de entorno
 
 Todo lo que empieza con `VITE_` se compila dentro del bundle y es público. Acá no va ningún secreto.
 
-| Variable | Para qué |
-| --- | --- |
+| Variable       | Para qué           |
+| -------------- | ------------------ |
 | `VITE_API_URL` | URL base de la API |
