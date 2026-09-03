@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { BATTLE_EVENT_TYPES,battleEventListSchema, battleEventSchema } from './battle-events'
+import { BATTLE_EVENT_TYPES, battleEventListSchema, battleEventSchema } from './battle-events'
 
 const combatantId = '5f1c2f2e-0d3a-4a1b-9c7d-1a2b3c4d5e6f'
 const otherId = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d'
