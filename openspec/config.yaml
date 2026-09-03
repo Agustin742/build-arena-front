@@ -1,0 +1,73 @@
+schema: spec-driven
+
+context: |
+  Build Arena Web — dumb console-styled client for the Build Arena turn-based
+  duel API (sibling repo `4-agosto`). No domain logic: the client renders
+  server intent and events only. Stack is PLANNED (not yet scaffolded, no
+  package.json exists): React + Vite + TS strict, React Router, TanStack
+  Query, Zustand, socket.io-client, Zod, Tailwind, pnpm.
+  Docs in Spanish; code/folders/routes/events/identifiers in English, no code
+  comments.
+
+strict_tdd: true
+
+testing:
+  status: planned_unverified
+  test_command: "pnpm test"
+  framework: Vitest + Testing Library + MSW
+  layers:
+    domain: Vitest pure — attribute cost table, modifiers, derived stats
+    contracts: Vitest pure — guide payloads validate/fail against Zod schemas
+    commands: Vitest pure — alias resolves same command as click, scope filtering
+    http: Vitest + MSW — single-flight refresh under concurrent 401s
+    realtime: Vitest with a hand-rolled BattleSocket double — event-by-event store transitions
+    ui: Testing Library + MSW — full user flows
+  note: >
+    Recorded as PLANNED and UNVERIFIED. Becomes real only after Phase 0 of
+    docs/design/implementation-plan.md lands package.json and the test
+    script. Update sdd-init/4-agosto-front (and this file) once verified.
+
+routing:
+  # Only 3 of 12 implementation-plan.md phases use the SDD route.
+  # Every other phase runs direct and must not create SDD artifacts.
+  sdd_changes:
+    - change: add-command-registry
+      phase: 4
+      branch: feat/add-command-registry
+    - change: add-battle-realtime
+      phase: 8
+      branch: feat/add-battle-realtime
+    - change: add-battle-arena
+      phase: 9
+      branch: feat/add-battle-arena
+      depends_on: add-battle-realtime
+
+rules:
+  proposal:
+    - Reference the exact overview.md/architecture.md sections the decision touches
+    - State only real open questions not already answered in docs/frontend-guide.md
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Prose in English (SDD artifacts are technical artifacts, not repo docs/)
+  design:
+    - Document store shape and event-to-action mapping for realtime/arena changes
+    - Cross-reference architecture.md's dependency rules (arrow points inward)
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Test-first ordering per Strict TDD (test commit before feat commit)
+    - Respect the 400-line review budget; propose chained PRs when at risk
+  apply:
+    guidelines:
+      - Follow docs/design/architecture.md layering (ui -> application -> domain/infrastructure)
+      - No combat rule logic in ui/ or application/; server response is authoritative
+      - Conventional Commits per docs/design/git-workflow.md scopes
+    tdd: true
+    test_command: "pnpm test"
+  verify:
+    test_command: "pnpm test"
+    build_command: "pnpm build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+    - Confirm phase's "Terminado cuando" criteria in implementation-plan.md are met, in addition to SDD verify
