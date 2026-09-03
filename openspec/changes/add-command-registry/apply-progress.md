@@ -66,22 +66,11 @@ Neither deviation touches `src/shared/ui/**`, changes public signatures from des
 
 None.
 
-### Remaining Tasks (slices 2 and 3 — NOT started, out of scope for this apply batch)
+### Remaining Tasks (as of end of Slice 1 — see the Slice 2 section below for what happened next)
 
-- [ ] 2.1 `numbered.ts` — `numberCommands`, `numberOptions`, `EMPTY_NUMBERED_LIST` (must import `NumberedItem`/`NumberedList` from `./types`, per the deviation above)
-- [ ] 2.2 `suggest.ts` — private nearest-alias candidates
-- [ ] 2.3 `resolve.ts` — `resolve()`
-- [ ] 2.4 Barrel extend (resolver exports)
-- [ ] 2.5 Slice 2 green check
-- [ ] 3.1 `pending.ts` — `begin`, `advance`, `SKIP_ID`, `CANCEL_ID`
-- [ ] 3.2 Barrel final surface
-- [ ] 3.3 `src/app/providers/command-runtime.ts`
-- [ ] 3.4 `src/app/providers/CommandRuntimeProvider.tsx`
-- [ ] 3.5 `src/app/layout/CommandListContainer.tsx`
-- [ ] 3.6 `src/app/layout/CommandPromptContainer.tsx`
-- [ ] 3.7 `DesignScreen` rewiring
-- [ ] 3.8 Regression check: `src/shared/ui/**` untouched
-- [ ] 3.9 Slice 3 green check
+Slice 2 (tasks 2.1-2.5) is recorded as its own section further down this document, now complete.
+Slice 3 (tasks 3.1-3.9) remains not started — see "Remaining Tasks" under the Slice 2 section for
+the current list.
 
 ### Workload / PR Boundary
 
@@ -96,6 +85,120 @@ None.
 
 ### Status
 
-7/7 slice-1 tasks complete (11/26 tasks project-wide, counting 1.1-1.7 + the 2.x/3.x tasks still
-pending). Ready for the next apply batch (slice 2) or for `sdd-verify` to check slice 1 in isolation,
-per the orchestrator's delivery strategy.
+7/7 slice-1 tasks complete. Merged into `main` via PR #23.
+
+## Slice 2 — Text resolver: COMPLETE (tasks 2.1-2.5)
+
+Branch `feat/commands-text-resolver`, branched locally from `feat/add-command-registry` (post-merge,
+now tracking `main` via PR #23). All 5 slice-2 tasks done, in order, following strict TDD (failing
+test commit before implementation commit for every unit of behavior).
+
+### Completed Tasks
+
+- [x] 2.1 `src/shared/commands/numbered.ts` — `numberCommands`, `numberOptions`, `EMPTY_NUMBERED_LIST`
+- [x] 2.2 `src/shared/commands/suggest.ts` — private nearest-alias candidates (Levenshtein distance)
+- [x] 2.3 `src/shared/commands/resolve.ts` — `resolve()` text/numeral entry point
+- [x] 2.4 Barrel extended with `resolve`, `numberCommands`, `numberOptions`, `EMPTY_NUMBERED_LIST`
+- [x] 2.5 Slice 2 green check — `pnpm test` and `pnpm build` both pass
+
+### Files Changed (Slice 2)
+
+| File | Action | What Was Done |
+|---|---|---|
+| `src/shared/commands/numbered.ts` | Created | `numberCommands` (keys `'1'..'n'` in registry order incl. blocked), `numberOptions` (numbers options then appends skip/cancel control entries), `EMPTY_NUMBERED_LIST`. Imports `NumberedItem`/`NumberedList` from `./types` per slice 1's documented deviation — does not redefine them |
+| `src/shared/commands/numbered.test.ts` | Created | 6 tests: key allocation incl. blocked, `lookup` agreement, generation differs across rebuilds, option numbering before control entries, skip entry conditional, cancel entry always present |
+| `src/shared/commands/suggest.ts` | Created | Private `suggest(input, aliases)` — Levenshtein distance, filters `<= 2`, sorts ascending, caps at 3 candidates. Not re-exported from the barrel |
+| `src/shared/commands/suggest.test.ts` | Created | 3 tests: near-miss becomes a candidate, nothing close returns `[]`, closer candidate ranks first |
+| `src/shared/commands/resolve.ts` | Created | `resolve(input, registry, ctx, options?)` — order of interpretation: `''` → `empty`; pure numeral checked against `typedAtGeneration !== ctx.picks.generation` first (stale), then `ctx.picks.lookup` (miss also stale); longest matching alias → `blocked` or `begin` with positionally parsed `seed`; otherwise `unknown` with `suggest()`'s candidates |
+| `src/shared/commands/resolve.test.ts` | Created | 7 tests: blank input, stale via generation mismatch, stale via lookup miss, matching numeral resolves, known alias with positional args, blocked alias carries reason, unmatched alias returns suggestions |
+| `src/shared/commands/index.ts` | Modified | Added `export * from './numbered'` and `export * from './resolve'`. `suggest.ts` and `numbered.ts`'s key allocator stay private, never re-exported |
+| `openspec/changes/add-command-registry/tasks.md` | Modified | Marked tasks 2.1-2.5 `[x]`, recorded slice 2 green-check evidence |
+
+### TDD Cycle Evidence (Slice 2)
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|---|---|---|---|---|---|---|---|
+| 2.1 | `numbered.test.ts` | Unit | ✅ 28/28 (baseline before this file) | ✅ Written (import to non-existent `./numbered` failed) | ✅ Passed (6/6) | ✅ 6 cases (key allocation, blocked inclusion, lookup agreement, generation difference, option numbering, skip/cancel entries) | ➖ None needed |
+| 2.2 | `suggest.test.ts` | Unit | ✅ (numbered.ts green) | ✅ Written (import to non-existent `./suggest` failed) | ✅ Passed (3/3) | ✅ 3 cases (near-miss, no-match, ranking) | ✅ Replaced 2D-array Levenshtein with a `Map`-keyed implementation after `noUncheckedIndexedAccess` lint failures on direct array indexing; re-ran green after the change |
+| 2.3 | `resolve.test.ts` | Unit | ✅ (numbered.ts + suggest.ts green) | ✅ Written (import to non-existent `./resolve` failed) | ✅ Passed (7/7) | ✅ 7 cases covering all 4 interpretation branches plus both `stale-number` sub-cases and the `blocked` case | ✅ Narrowed a test fixture's `availability` callback type from a duplicated `ReturnType<...>` union to `CommandAvailability` after a `no-duplicate-type-constituents` lint failure |
+
+### Test Summary (Slice 2)
+
+- **Total tests written**: 16 (6 + 3 + 7)
+- **Total tests passing**: 28/28 in `src/shared/commands/` (12 from slice 1 + 16 from slice 2); 249/249 project-wide
+- **Layers used**: Unit (16), Integration (0), E2E (0)
+- **Approval tests** (refactoring): None — no refactoring tasks in this slice
+- **Pure functions created**: `numberCommands`, `numberOptions`, `suggest` (private), `resolve`, plus private helpers `buildLookup`, `levenshteinDistance`, `parsePositional`, `findAliasMatch`, `allAliases`
+
+### Work Unit Evidence (Slice 2)
+
+| Evidence | Value |
+|---|---|
+| Focused test command and exact result | `pnpm vitest run src/shared/commands` → 6 test files, 28/28 passing |
+| Runtime harness command/scenario and exact result | N/A — `src/shared/commands/` is React-free pure logic (design.md's stated constraint); no runtime/UI boundary exists in slice 2. Full-suite `pnpm test` (28 files, 249/249) and `pnpm build` (`tsc -b && vite build`, succeeded, `dist/` emitted) both re-run as the closest integration proof and both green |
+| Rollback boundary | Revert commits `7d6deb1`..`b4636d4` (this slice only, 8 commits) or delete `numbered.ts`, `suggest.ts`, `resolve.ts` and their tests, and revert `index.ts`'s two added export lines plus the `tasks.md` progress edit — no other file touched |
+
+### Deviations from Design
+
+None — `numbered.ts` imports `NumberedItem`/`NumberedList` from `./types` per slice 1's documented
+deviation instead of redefining them, exactly as instructed. `resolve.ts`'s alias matching only
+checks `command.aliases` (not `command.id`), matching the spec's and design's exact wording
+("Longest matching alias") and task 2.3.1's scenario list, which name only alias cases (unlike
+`registry.ts`'s duplicate-detection scope in slice 1, which explicitly covers `id` too).
+
+### Issues Found
+
+1. `noUncheckedIndexedAccess` (enabled in `tsconfig.app.json`) rejects direct 2D-array indexing
+   (`matrix[row][col]`) as `number | undefined` under `@typescript-eslint/restrict-plus-operands`.
+   Rewrote `suggest.ts`'s Levenshtein distance with a `Map<string, number>` keyed by `"row,col"`
+   instead of a nested array, avoiding the indexing ambiguity entirely.
+2. `@typescript-eslint/no-duplicate-type-constituents` rejected a test fixture typed as
+   `ReturnType<typeof available> | ReturnType<typeof blocked>` because both resolve to the same
+   `CommandAvailability` union. Fixed by importing and using `CommandAvailability` directly.
+
+Neither issue touches production behavior — both are type-level fixes caught by lint/typecheck
+before the GREEN commit landed.
+
+### Review Budget — Actual vs. Estimate (Risk)
+
+design.md's Review budget section estimated slice 2 at ~390 authored lines. The actual authored
+diff for `src/shared/commands/` in this slice (`numbered.ts` + `.test.ts`, `suggest.ts` + `.test.ts`,
+`resolve.ts` + `.test.ts`, `index.ts`'s two added lines) is **447 insertions, 0 deletions, across 7
+files** — over the 400-line PR review budget by 47 lines. All work is one coherent, independently
+green deliverable (typed resolution: numbered picks, alias suggestions, `resolve()`), and no task
+was implemented partially to hit a line count. Flagging this explicitly rather than silently
+absorbing it, per this session's instructions: **the user/orchestrator should decide before opening
+the PR** whether to accept `size:exception` for this slice (single logical unit, all tests green,
+57 lines over the design estimate but only 47 over the hard 400-line PR budget) or split it further
+(e.g., `resolve.ts` + its test, at 240 of the 447 lines, is the largest single unit and the most
+likely candidate for its own follow-on PR if the maintainer wants to stay under 400).
+
+### Remaining Tasks (slice 3 — NOT started, out of scope for this apply batch)
+
+- [ ] 3.1 `pending.ts` — `begin`, `advance`, `SKIP_ID`, `CANCEL_ID`
+- [ ] 3.2 Barrel final surface
+- [ ] 3.3 `src/app/providers/command-runtime.ts`
+- [ ] 3.4 `src/app/providers/CommandRuntimeProvider.tsx`
+- [ ] 3.5 `src/app/layout/CommandListContainer.tsx`
+- [ ] 3.6 `src/app/layout/CommandPromptContainer.tsx`
+- [ ] 3.7 `DesignScreen` rewiring
+- [ ] 3.8 Regression check: `src/shared/ui/**` untouched
+- [ ] 3.9 Slice 3 green check
+
+### Workload / PR Boundary (Slice 2)
+
+- Mode: chained/stacked PR slice (`auto-chain`, `stacked-to-main` per tasks.md's Branch plan)
+- Current work unit: Slice 2 — Text resolver
+- Boundary: starts from `feat/add-command-registry`'s tip (merged into `main` via PR #23), ends with
+  a self-contained, independently green `numbered.ts` + `suggest.ts` + `resolve.ts` plus the barrel
+  extension. Slice 3 branches locally from this branch's tip per the Branch plan; on GitHub the PR
+  bases on `main`.
+- Estimated review budget impact: 447 changed lines (447 insertions, 0 deletions across 7 files) —
+  **over the 400-line budget by 47 lines**, see "Review Budget — Actual vs. Estimate" above.
+
+### Status (Cumulative)
+
+12/26 tasks project-wide complete (7 slice-1 + 5 slice-2). Slice 1 merged into `main` (PR #23).
+Slice 2 ready for the next apply batch (slice 3) or for `sdd-verify` to check slice 2 in isolation.
+**Risk requiring a decision before opening slice 2's PR**: actual diff (447 lines) exceeds the
+400-line budget by 47 lines — see the Review Budget section above.
