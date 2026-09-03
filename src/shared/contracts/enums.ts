@@ -63,6 +63,9 @@ export const buildViolationRuleSchema = z.enum([
 ])
 export type BuildViolationRule = z.infer<typeof buildViolationRuleSchema>
 
+export const friendshipViolationRuleSchema = z.enum(['SELF_FRIENDSHIP', 'DUPLICATE_REQUEST'])
+export type FriendshipViolationRule = z.infer<typeof friendshipViolationRuleSchema>
+
 export const battleViolationRuleSchema = z.enum(['SELF_CHALLENGE'])
 export type BattleViolationRule = z.infer<typeof battleViolationRuleSchema>
 
