@@ -86,7 +86,11 @@ Branch `feat/add-command-registry`. Ships a usable registry: types, availability
 registration with scope-intersection filtering and duplicate-alias rejection, plus the
 `architecture.md` correction.
 
-### 1.1 — `types.ts`
+**Status: ✅ Complete — tasks 1.1-1.7 done.** `pnpm test` 25 files / 233 tests passing (baseline was
+22 files / 221 tests). `pnpm build` green. Total authored diff: 310 insertions / 4 deletions across
+9 files (~314 lines), under the 400-line budget.
+
+### [x] 1.1 — `types.ts`
 Create `src/shared/commands/types.ts` with every public type from design.md's Interfaces section
 (`CommandScope`, `CommandOption`, `CommandArg`, `ParsedArgs`, `CommandAvailability`, `CommandResult`,
 `CommandState`, `CommandContext`, `Command`, `VisibleCommand`). No imports outside the folder.
@@ -95,7 +99,15 @@ downstream test that imports these types.
 
 - Commit: `feat(commands): add command types`
 
-### 1.2 — `availability.ts`
+> **Deviation (documented, not silent)**: `NumberedItem` and `NumberedList` — design.md places them
+> under `numbered.ts` (slice 2) — were defined in `types.ts` instead, because `CommandContext.picks:
+> NumberedList` must typecheck standalone for slice 1's own green check (task 1.7), and `types.ts`
+> is constrained to "no imports outside the folder" with no `numbered.ts` yet to import from. Slice 2's
+> `numbered.ts` (task 2.1) should `import { type NumberedItem, type NumberedList } from './types'`
+> and add only `numberCommands`, `numberOptions`, `EMPTY_NUMBERED_LIST` — not redefine the interfaces.
+> The barrel already re-exports both via `export * from './types'`.
+
+### [x] 1.2 — `availability.ts`
 Requirement: Availability Makes an Unreasoned Block Unrepresentable.
 
 - 1.2.1 Test: `available()` returns `{ enabled: true }`; `blocked(reason)` returns
@@ -104,7 +116,7 @@ Requirement: Availability Makes an Unreasoned Block Unrepresentable.
 - 1.2.2 Implement `available` / `blocked` per design.md.
   Commit: `feat(commands): add availability helpers`
 
-### 1.3 — `scope.ts`
+### [x] 1.3 — `scope.ts`
 Requirement: Pure Scope Derivation From State.
 
 - 1.3.1 Test: the four-row `deriveScopes(state)` table from the spec (no session → `anonymous`;
@@ -114,7 +126,7 @@ Requirement: Pure Scope Derivation From State.
 - 1.3.2 Implement `deriveScopes` per design.md (pure, total, no route lookup).
   Commit: `feat(commands): add deriveScopes state derivation`
 
-### 1.4 — `registry.ts`
+### [x] 1.4 — `registry.ts`
 Requirements: Registration and Scope Filtering by Intersection; Duplicate Alias Throws at
 Registration; (integration half of) Availability — blocked items still appear in `visible()`.
 
@@ -126,14 +138,18 @@ Registration; (integration half of) Availability — blocked items still appear 
 - 1.4.2 Implement `createCommandRegistry` and `DuplicateAliasError` per design.md.
   Commit: `feat(commands): add command registry with scope filtering`
 
-### 1.5 — Barrel (slice-1 surface)
+> Note: added one extra triangulation test for an `id` collision (not just alias) under overlapping
+> scope, matching design.md's registry.ts prose ("an incoming alias or id collides"). Implementation
+> treats `[command.id, ...command.aliases]` as the identifier set collision-checked per scope.
+
+### [x] 1.5 — Barrel (slice-1 surface)
 Create `src/shared/commands/index.ts` re-exporting the types from 1.1, `available`/`blocked` from
 1.2, `deriveScopes` from 1.3, `createCommandRegistry`/`DuplicateAliasError` from 1.4. Mirrors
 `src/shared/contracts/index.ts`'s barrel shape. Extended in slices 2 and 3.
 
 - Commit: `feat(commands): add command registry barrel`
 
-### 1.6 — `architecture.md` correction
+### [x] 1.6 — `architecture.md` correction
 Exact replacement text from design.md's "Documentation deviations" section — apply verbatim, do not
 improvise:
 
@@ -148,9 +164,13 @@ improvise:
 
 Commit: `docs(design): correct command scope and availability signatures`
 
-### 1.7 — Slice 1 green check
+### [x] 1.7 — Slice 1 green check
 Run `pnpm test` and `pnpm build`; both must pass with only slice 1's files. No task, no commit —
 a verification gate before opening the PR.
+
+Verified: `pnpm test` → 25 test files / 233 tests passing (baseline before this slice: 22 files /
+221 tests; +3 files, +12 tests, all in `src/shared/commands/`). `pnpm build` → `tsc -b && vite build`
+succeeded, `dist/` emitted. `src/shared/ui/**` untouched, not part of this diff.
 
 ---
 
