@@ -1,6 +1,6 @@
 import { type z } from 'zod'
 
-import { type TokenPair } from '@/shared/contracts'
+import { type TokenPair, tokenPairSchema } from '@/shared/contracts'
 
 import { ApiError, SchemaError } from './api-error'
 
@@ -24,7 +24,9 @@ export interface RequestOptions<TValue> {
 export interface ApiClientOptions {
   baseUrl: string
   tokens: TokenStore
-  fetchImpl?: typeof globalThis.fetch
+  onSessionExpired?: (() => void) | undefined
+  refreshPath?: string | undefined
+  fetchImpl?: typeof globalThis.fetch | undefined
 }
 
 export interface ApiClient {
@@ -68,11 +70,18 @@ async function readBody(response: Response): Promise<unknown> {
 export function createApiClient({
   baseUrl,
   tokens,
+  onSessionExpired,
+  refreshPath = '/auth/refresh',
   fetchImpl = globalThis.fetch,
 }: ApiClientOptions): ApiClient {
-  async function send(path: string, options: RequestOptions<unknown>): Promise<Response> {
-    const { method = 'GET', body, auth = true, signal } = options
-    const accessToken = auth ? tokens.getAccessToken() : null
+  let refreshInFlight: Promise<TokenPair | null> | null = null
+
+  async function send(
+    path: string,
+    options: RequestOptions<unknown>,
+    accessToken: string | null,
+  ): Promise<Response> {
+    const { method = 'GET', body, signal } = options
     const headers = new Headers()
 
     if (accessToken !== null) {
@@ -99,12 +108,78 @@ export function createApiClient({
     }
   }
 
+  async function rotateTokens(): Promise<TokenPair | null> {
+    const refreshToken = tokens.getRefreshToken()
+
+    if (refreshToken === null) {
+      return null
+    }
+
+    try {
+      const response = await send(refreshPath, { method: 'POST', body: { refreshToken } }, null)
+
+      if (!response.ok) {
+        return null
+      }
+
+      const parsed = tokenPairSchema.safeParse(await readBody(response))
+
+      if (!parsed.success) {
+        return null
+      }
+
+      tokens.setTokens(parsed.data)
+
+      return parsed.data
+    } catch {
+      return null
+    }
+  }
+
+  function endSession(): null {
+    tokens.clear()
+    onSessionExpired?.()
+
+    return null
+  }
+
+  function refreshOnce(): Promise<TokenPair | null> {
+    refreshInFlight ??= rotateTokens()
+      .then((pair) => pair ?? endSession())
+      .finally(() => {
+        refreshInFlight = null
+      })
+
+    return refreshInFlight
+  }
+
+  async function attempt<TValue>(
+    path: string,
+    options: RequestOptions<TValue>,
+    accessToken: string | null,
+  ): Promise<{ response: Response; payload: unknown }> {
+    const response = await send(path, options, accessToken)
+
+    return { response, payload: await readBody(response) }
+  }
+
   async function request<TValue = undefined>(
     path: string,
     options: RequestOptions<TValue> = {},
   ): Promise<TValue> {
-    const response = await send(path, options)
-    const payload = await readBody(response)
+    const authenticated = options.auth !== false
+    const tokenUsed = authenticated ? tokens.getAccessToken() : null
+
+    let { response, payload } = await attempt(path, options, tokenUsed)
+
+    if (response.status === 401 && tokenUsed !== null) {
+      const rotatedElsewhere = tokens.getAccessToken() !== tokenUsed
+      const canRetry = rotatedElsewhere || (await refreshOnce()) !== null
+
+      if (canRetry) {
+        ;({ response, payload } = await attempt(path, options, tokens.getAccessToken()))
+      }
+    }
 
     if (!response.ok) {
       throw new ApiError(`The request to ${path} failed with ${String(response.status)}`, {
