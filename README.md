@@ -25,14 +25,17 @@ pnpm dev
 
 ## Scripts
 
-| Script           | Qué hace                               |
-| ---------------- | -------------------------------------- |
-| `pnpm dev`       | Servidor de desarrollo                 |
-| `pnpm build`     | Chequeo de tipos y build de producción |
-| `pnpm preview`   | Sirve el build de producción           |
-| `pnpm typecheck` | Solo chequeo de tipos                  |
-| `pnpm lint`      | ESLint sobre todo el proyecto          |
-| `pnpm format`    | Prettier sobre el código               |
+| Script               | Qué hace                               |
+| -------------------- | -------------------------------------- |
+| `pnpm dev`           | Servidor de desarrollo                 |
+| `pnpm build`         | Chequeo de tipos y build de producción |
+| `pnpm preview`       | Sirve el build de producción           |
+| `pnpm typecheck`     | Solo chequeo de tipos                  |
+| `pnpm lint`          | ESLint sobre todo el proyecto          |
+| `pnpm format`        | Prettier sobre el código               |
+| `pnpm test`          | Vitest en modo single run              |
+| `pnpm test:watch`    | Vitest en modo watch                   |
+| `pnpm test:coverage` | Vitest con reporte de cobertura        |
 
 ## Variables de entorno
 
