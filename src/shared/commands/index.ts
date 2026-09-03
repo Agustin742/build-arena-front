@@ -1,4 +1,6 @@
 export * from './availability'
+export * from './numbered'
 export * from './registry'
+export * from './resolve'
 export * from './scope'
 export * from './types'
