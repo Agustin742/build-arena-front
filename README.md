@@ -41,9 +41,9 @@ pnpm dev
 
 Todo lo que empieza con `VITE_` se compila dentro del bundle y es público. Acá no va ningún secreto.
 
-| Variable       | Para qué           |
-| -------------- | ------------------ |
-| `VITE_API_URL` | URL base de la API |
+| Variable       | Para qué                                                         |
+| -------------- | ---------------------------------------------------------------- |
+| `VITE_API_URL` | URL base de la API. Sin ella, la aplicación no arranca y lo dice |
 
 ## Despliegue
 

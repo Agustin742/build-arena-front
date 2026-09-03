@@ -54,9 +54,12 @@ describe('useHealthCheck', () => {
 
     expect(result.current.elapsedSeconds).toBe(0)
 
-    await waitFor(() => {
-      expect(result.current.elapsedSeconds).toBeGreaterThan(0)
-    })
+    await waitFor(
+      () => {
+        expect(result.current.elapsedSeconds).toBeGreaterThan(0)
+      },
+      { timeout: 2000 },
+    )
 
     await act(async () => {
       pending.resolve()

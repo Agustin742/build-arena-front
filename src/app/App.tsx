@@ -1,11 +1,14 @@
 import { BrowserRouter } from 'react-router'
 
+import { HealthGate } from '@/app/boot/HealthGate'
 import { AppRoutes } from '@/app/routes/AppRoutes'
 
 export function App() {
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <HealthGate>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </HealthGate>
   )
 }
