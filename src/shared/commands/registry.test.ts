@@ -42,27 +42,27 @@ describe('createCommandRegistry', () => {
     const registry = createCommandRegistry()
     registry.register(makeCommand({ id: 'cmd-a', aliases: ['top'], scope: ['lobby'] }))
 
-    expect(() =>
-      registry.register(makeCommand({ id: 'cmd-b', aliases: ['top'], scope: ['lobby'] })),
-    ).toThrow(DuplicateAliasError)
+    expect(() => {
+      registry.register(makeCommand({ id: 'cmd-b', aliases: ['top'], scope: ['lobby'] }))
+    }).toThrow(DuplicateAliasError)
   })
 
   it('allows the same alias to register again under a disjoint scope', () => {
     const registry = createCommandRegistry()
     registry.register(makeCommand({ id: 'cmd-a', aliases: ['attack'], scope: ['battle'] }))
 
-    expect(() =>
-      registry.register(makeCommand({ id: 'cmd-b', aliases: ['attack'], scope: ['lobby'] })),
-    ).not.toThrow()
+    expect(() => {
+      registry.register(makeCommand({ id: 'cmd-b', aliases: ['attack'], scope: ['lobby'] }))
+    }).not.toThrow()
   })
 
   it('throws DuplicateAliasError when a new id collides under an overlapping scope', () => {
     const registry = createCommandRegistry()
     registry.register(makeCommand({ id: 'shared-id', aliases: ['first'], scope: ['lobby'] }))
 
-    expect(() =>
-      registry.register(makeCommand({ id: 'shared-id', aliases: ['second'], scope: ['lobby'] })),
-    ).toThrow(DuplicateAliasError)
+    expect(() => {
+      registry.register(makeCommand({ id: 'shared-id', aliases: ['second'], scope: ['lobby'] }))
+    }).toThrow(DuplicateAliasError)
   })
 
   it('includes a command in visible() only when activeScopes intersects its scope', () => {
