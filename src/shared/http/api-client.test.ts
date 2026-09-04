@@ -193,6 +193,23 @@ describe('createApiClient', () => {
     expect(error.status).toBeNull()
   })
 
+  it('uses whatever global fetch is installed when the request runs, not at creation', async () => {
+    const client = createApiClient({ baseUrl, tokens: tokenStoreWith('access-1') })
+    const original = globalThis.fetch
+    const swapped = vi.fn(original)
+    globalThis.fetch = swapped
+
+    server.use(http.get(`${baseUrl}/auth/me`, () => HttpResponse.json(user)))
+
+    try {
+      await client.get('/auth/me', publicUserSchema)
+    } finally {
+      globalThis.fetch = original
+    }
+
+    expect(swapped).toHaveBeenCalled()
+  })
+
   it('joins the base url and the path without doubling the slash', async () => {
     server.use(http.get(`${baseUrl}/auth/me`, () => HttpResponse.json(user)))
 
