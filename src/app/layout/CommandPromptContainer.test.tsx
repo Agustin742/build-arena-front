@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { type ReactNode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
@@ -7,10 +8,22 @@ import { type Command, type CommandState } from '@/shared/commands'
 
 import { CommandListContainer } from './CommandListContainer'
 import { CommandPromptContainer } from './CommandPromptContainer'
+import { PromptSlotContext } from './prompt-slot'
 
 const lobbyState: CommandState = { isAuthenticated: true, battleId: null, reactionWindowOpen: false }
 const battleState: CommandState = { isAuthenticated: true, battleId: 'b1', reactionWindowOpen: false }
 const ok = () => Promise.resolve({ status: 'ok' as const })
+
+function PromptSlotHarness({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null)
+
+  return (
+    <>
+      <div ref={setSlot} />
+      <PromptSlotContext value={slot}>{children}</PromptSlotContext>
+    </>
+  )
+}
 
 function makeCommand(overrides: Partial<Command> = {}): Command {
   return {
@@ -63,9 +76,11 @@ describe('CommandPromptContainer', () => {
   it('resolves a full typed line positionally and runs once', async () => {
     const run = vi.fn(ok)
     render(
-      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
 
     await userEvent.type(screen.getByRole('textbox'), 'challenge alice starter{Enter}')
@@ -76,9 +91,11 @@ describe('CommandPromptContainer', () => {
   it('opens the guided prompt sequence in declaration order for a bare alias', async () => {
     const run = vi.fn(ok)
     render(
-      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
     const input = screen.getByRole('textbox')
 
@@ -100,9 +117,11 @@ describe('CommandPromptContainer', () => {
       availability: () => ({ enabled: false, reason: 'necesita MAGIC 14' }),
     })
     render(
-      <CommandRuntimeProvider commands={[blocked]} state={lobbyState}>
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[blocked]} state={lobbyState}>
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
 
     await userEvent.type(screen.getByRole('textbox'), 'fireball{Enter}')
@@ -113,9 +132,11 @@ describe('CommandPromptContainer', () => {
   it('drops a pending command on Esc without calling run', async () => {
     const run = vi.fn(ok)
     render(
-      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
     const input = screen.getByRole('textbox')
 
@@ -131,9 +152,11 @@ describe('CommandPromptContainer', () => {
   it('drops a pending command when the player types cancel', async () => {
     const run = vi.fn(ok)
     render(
-      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
     const input = screen.getByRole('textbox')
 
@@ -149,10 +172,12 @@ describe('CommandPromptContainer', () => {
   it('resolves a typed numeral mid-flow against the pending pick options', async () => {
     const run = vi.fn(ok)
     render(
-      <CommandRuntimeProvider commands={[makePickCommand(run)]} state={lobbyState}>
-        <CommandListContainer />
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[makePickCommand(run)]} state={lobbyState}>
+          <CommandListContainer />
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
     const input = screen.getByRole('textbox')
 
@@ -166,10 +191,12 @@ describe('CommandPromptContainer', () => {
     const run = vi.fn(ok)
     const command = makePickCommand(run)
     const { rerender } = render(
-      <CommandRuntimeProvider commands={[command]} state={lobbyState}>
-        <CommandListContainer />
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[command]} state={lobbyState}>
+          <CommandListContainer />
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
     const input = screen.getByRole('textbox')
 
@@ -177,10 +204,12 @@ describe('CommandPromptContainer', () => {
     await userEvent.type(input, '2')
 
     rerender(
-      <CommandRuntimeProvider commands={[command]} state={battleState}>
-        <CommandListContainer />
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
+      <PromptSlotHarness>
+        <CommandRuntimeProvider commands={[command]} state={battleState}>
+          <CommandListContainer />
+          <CommandPromptContainer />
+        </CommandRuntimeProvider>
+      </PromptSlotHarness>,
     )
 
     await userEvent.type(input, '{Enter}')

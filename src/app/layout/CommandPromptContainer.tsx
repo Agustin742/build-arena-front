@@ -1,0 +1,104 @@
+import { useEffect, useState } from 'react'
+
+import { useCommandRuntime } from '@/app/providers/command-runtime'
+import { type CommandArg } from '@/shared/commands'
+import { Prompt } from '@/shared/ui'
+
+import { PromptPortal } from './PromptPortal'
+
+const NUMERAL_PATTERN = /^\d+$/
+const CANCEL_KEYWORD = 'cancel'
+
+export function CommandPromptContainer() {
+  const runtime = useCommandRuntime()
+  const [value, setValue] = useState('')
+  const [typedAtGeneration, setTypedAtGeneration] = useState<number | undefined>(undefined)
+  const [localError, setLocalError] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (runtime.pending === null) {
+      return
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        runtime.cancelPending()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [runtime])
+
+  function handleChange(next: string) {
+    if (value === '' && next !== '') {
+      setTypedAtGeneration(runtime.ctx.picks.generation)
+    }
+
+    setValue(next)
+  }
+
+  function pendingPickArg(): CommandArg | undefined {
+    const pending = runtime.pending
+
+    if (pending === null) {
+      return undefined
+    }
+
+    const command = runtime.registry.get(pending.commandId)
+
+    return command?.args.find((arg) => arg.name === pending.awaiting && arg.kind === 'pick')
+  }
+
+  function resetInput() {
+    setValue('')
+    setTypedAtGeneration(undefined)
+  }
+
+  function handleSubmit(raw: string) {
+    if (runtime.pending !== null && raw === CANCEL_KEYWORD) {
+      setLocalError(undefined)
+      runtime.cancelPending()
+      resetInput()
+      return
+    }
+
+    const pickArg = pendingPickArg()
+
+    if (pickArg !== undefined && NUMERAL_PATTERN.test(raw)) {
+      const optionId =
+        typedAtGeneration === runtime.ctx.picks.generation ? runtime.ctx.picks.lookup(raw) : undefined
+
+      if (optionId === undefined) {
+        setLocalError(`"${raw}" is no longer available`)
+        resetInput()
+        return
+      }
+
+      setLocalError(undefined)
+      runtime.selectItem(optionId)
+      resetInput()
+      return
+    }
+
+    setLocalError(undefined)
+    runtime.submitText(raw, typedAtGeneration)
+    resetInput()
+  }
+
+  const error = localError ?? runtime.promptError
+
+  return (
+    <PromptPortal>
+      <Prompt
+        value={value}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        {...(error === undefined ? {} : { error })}
+      />
+    </PromptPortal>
+  )
+}
