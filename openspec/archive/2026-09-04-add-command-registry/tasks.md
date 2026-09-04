@@ -83,6 +83,36 @@ Strict TDD per file and the 400-line review budget; it does not change the inten
 
 ---
 
+## Task checklist
+
+Machine-readable roll-up of every task below. Each entry links to its full definition in the
+slice sections that follow; those sections carry the requirement mapping, TDD ordering, and
+commit messages.
+
+- [x] 1.1 — `types.ts`
+- [x] 1.2 — `availability.ts`
+- [x] 1.3 — `scope.ts`
+- [x] 1.4 — `registry.ts`
+- [x] 1.5 — Barrel (slice-1 surface)
+- [x] 1.6 — `architecture.md` correction
+- [x] 1.7 — Slice 1 green check
+- [x] 2.1 — `numbered.ts`
+- [x] 2.2 — `suggest.ts`
+- [x] 2.3 — `resolve.ts`
+- [x] 2.4 — Barrel (extend)
+- [x] 2.5 — Slice 2 green check
+- [x] 3.1 — `pending.ts`
+- [x] 3.2 — Barrel (final surface)
+- [x] 3.3 — `src/app/providers/command-runtime.ts`
+- [x] 3.4 — `src/app/providers/CommandRuntimeProvider.tsx`
+- [x] 3.5 — `src/app/layout/CommandListContainer.tsx`
+- [x] 3.6 — `src/app/layout/CommandPromptContainer.tsx`
+- [x] 3.7 — `DesignScreen` rewiring
+- [x] 3.8 — Regression check: `src/shared/ui/**` untouched
+- [x] 3.9 — Slice 3 green check
+
+---
+
 ## Slice 1 — Registry core
 
 Branch `feat/add-command-registry`. Ships a usable registry: types, availability, scope derivation,
