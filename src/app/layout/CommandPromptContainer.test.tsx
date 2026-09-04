@@ -127,7 +127,7 @@ describe('CommandPromptContainer', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('necesita MAGIC 14')
   })
 
-  it('drops a pending command on Esc without calling run', async () => {
+  it('drops a pending command via Esc or a typed cancel, without ever calling run', async () => {
     const run = vi.fn(ok)
     renderPrompt(
       <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
@@ -140,27 +140,15 @@ describe('CommandPromptContainer', () => {
     await userEvent.type(input, 'alice{Enter}')
     await userEvent.keyboard('{Escape}')
     await userEvent.type(input, 'starter{Enter}')
-
-    expect(run).not.toHaveBeenCalled()
     expect(screen.getByRole('alert')).toHaveTextContent('Unknown command')
-  })
-
-  it('drops a pending command when the player types cancel', async () => {
-    const run = vi.fn(ok)
-    renderPrompt(
-      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-        <CommandPromptContainer />
-      </CommandRuntimeProvider>,
-    )
-    const input = screen.getByRole('textbox')
 
     await userEvent.type(input, 'challenge{Enter}')
     await userEvent.type(input, 'alice{Enter}')
     await userEvent.type(input, 'cancel{Enter}')
     await userEvent.type(input, 'starter{Enter}')
+    expect(screen.getByRole('alert')).toHaveTextContent('Unknown command')
 
     expect(run).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert')).toHaveTextContent('Unknown command')
   })
 
   it('resolves a typed numeral mid-flow against the pending pick options', async () => {
