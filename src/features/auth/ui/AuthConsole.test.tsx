@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw'
 import { type ReactNode, useState } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { authCommands } from '@/app/boot/auth-commands'
 import { PromptSlotContext } from '@/app/layout/prompt-slot'
 import { server } from '@/test/msw/server'
 
@@ -34,7 +35,9 @@ function PromptSlotHarness({ children }: { children: ReactNode }) {
 }
 
 function renderConsole() {
-  return render(<AuthConsole title="acceso" />, { wrapper: PromptSlotHarness })
+  return render(<AuthConsole title="acceso" commands={authCommands} />, {
+    wrapper: PromptSlotHarness,
+  })
 }
 
 describe('AuthConsole', () => {
