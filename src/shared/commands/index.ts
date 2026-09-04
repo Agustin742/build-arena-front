@@ -1,5 +1,6 @@
 export * from './availability'
 export * from './numbered'
+export * from './pending'
 export * from './registry'
 export * from './resolve'
 export * from './scope'
