@@ -41,7 +41,7 @@ export function CommandPromptContainer() {
     setValue(next)
   }
 
-  function pendingPickArg(): CommandArg | undefined {
+  function pendingArg(): CommandArg | undefined {
     const pending = runtime.pending
 
     if (pending === null) {
@@ -50,7 +50,13 @@ export function CommandPromptContainer() {
 
     const command = runtime.registry.get(pending.commandId)
 
-    return command?.args.find((arg) => arg.name === pending.awaiting && arg.kind === 'pick')
+    return command?.args.find((arg) => arg.name === pending.awaiting)
+  }
+
+  function pendingPickArg(): CommandArg | undefined {
+    const arg = pendingArg()
+
+    return arg?.kind === 'pick' ? arg : undefined
   }
 
   function resetInput() {
@@ -70,7 +76,9 @@ export function CommandPromptContainer() {
 
     if (pickArg !== undefined && NUMERAL_PATTERN.test(raw)) {
       const optionId =
-        typedAtGeneration === runtime.ctx.picks.generation ? runtime.ctx.picks.lookup(raw) : undefined
+        typedAtGeneration === runtime.ctx.picks.generation
+          ? runtime.ctx.picks.lookup(raw)
+          : undefined
 
       if (optionId === undefined) {
         setLocalError(`"${raw}" is no longer available`)
@@ -90,6 +98,7 @@ export function CommandPromptContainer() {
   }
 
   const error = localError ?? runtime.promptError
+  const awaiting = pendingArg()
 
   return (
     <PromptPortal>
@@ -97,6 +106,13 @@ export function CommandPromptContainer() {
         value={value}
         onChange={handleChange}
         onSubmit={handleSubmit}
+        {...(awaiting === undefined
+          ? {}
+          : {
+              type: awaiting.kind === 'password' ? ('password' as const) : ('text' as const),
+              hint: `${awaiting.label}:`,
+              label: awaiting.label,
+            })}
         {...(error === undefined ? {} : { error })}
       />
     </PromptPortal>

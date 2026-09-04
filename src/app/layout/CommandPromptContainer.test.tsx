@@ -10,8 +10,16 @@ import { CommandListContainer } from './CommandListContainer'
 import { CommandPromptContainer } from './CommandPromptContainer'
 import { PromptSlotContext } from './prompt-slot'
 
-const lobbyState: CommandState = { isAuthenticated: true, battleId: null, reactionWindowOpen: false }
-const battleState: CommandState = { isAuthenticated: true, battleId: 'b1', reactionWindowOpen: false }
+const lobbyState: CommandState = {
+  isAuthenticated: true,
+  battleId: null,
+  reactionWindowOpen: false,
+}
+const battleState: CommandState = {
+  isAuthenticated: true,
+  battleId: 'b1',
+  reactionWindowOpen: false,
+}
 const ok = () => Promise.resolve({ status: 'ok' as const })
 
 function PromptSlotHarness({ children }: { children: ReactNode }) {
@@ -76,7 +84,58 @@ function makePickCommand(run: Command['run'] = ok): Command {
   })
 }
 
+function makeLogin(run: Command['run'] = ok): Command {
+  return makeCommand({
+    id: 'login',
+    label: 'LOGIN',
+    aliases: ['login'],
+    args: [
+      { name: 'email', kind: 'text', label: 'Email', required: true },
+      { name: 'password', kind: 'password', label: 'Contraseña', required: true },
+    ],
+    scope: ['anonymous', 'lobby'],
+    run,
+  })
+}
+
 describe('CommandPromptContainer', () => {
+  it('names the argument it is waiting for so the player knows what to type', async () => {
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge()]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
+    )
+
+    await userEvent.type(screen.getByRole('textbox'), 'challenge{Enter}')
+
+    expect(screen.getByText('Rival:')).toBeInTheDocument()
+  })
+
+  it('masks the line while it waits for a password and clears the mask afterwards', async () => {
+    const run = vi.fn(ok)
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeLogin(run)]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
+    )
+
+    await userEvent.type(screen.getByRole('textbox'), 'login{Enter}')
+    await userEvent.type(screen.getByRole('textbox'), 'ada@arena.dev{Enter}')
+
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+
+    const masked = screen.getByLabelText('Contraseña')
+    expect(masked).toHaveAttribute('type', 'password')
+
+    await userEvent.type(masked, 'hunter2hunter2{Enter}')
+
+    expect(run).toHaveBeenCalledWith(
+      { email: 'ada@arena.dev', password: 'hunter2hunter2' },
+      expect.anything(),
+    )
+    expect(screen.getByRole('textbox')).toHaveAttribute('type', 'text')
+  })
+
   it('resolves a full typed line positionally and runs once', async () => {
     const run = vi.fn(ok)
     renderPrompt(

@@ -71,6 +71,30 @@ describe('Prompt', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
+  it('masks what is typed when it asks for a password', () => {
+    render(
+      <Prompt
+        value="hunter2hunter2"
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+        type="password"
+        label="Contraseña"
+      />,
+    )
+
+    const input = screen.getByLabelText('Contraseña')
+
+    expect(input).toHaveAttribute('type', 'password')
+    expect(input).toHaveValue('hunter2hunter2')
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('stays a plain text line when no type is given', () => {
+    render(<Prompt value="" onChange={vi.fn()} onSubmit={vi.fn()} />)
+
+    expect(screen.getByRole('textbox')).toHaveAttribute('type', 'text')
+  })
+
   it('blinks the marker while the line is empty and stops once there is text', () => {
     const { rerender } = render(<Prompt value="" onChange={vi.fn()} onSubmit={vi.fn()} />)
 
