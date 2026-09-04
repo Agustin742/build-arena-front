@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { type ReactNode, useState } from 'react'
+import { type ReactElement, type ReactNode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
@@ -23,6 +23,10 @@ function PromptSlotHarness({ children }: { children: ReactNode }) {
       <PromptSlotContext value={slot}>{children}</PromptSlotContext>
     </>
   )
+}
+
+function renderPrompt(ui: ReactElement) {
+  return render(ui, { wrapper: PromptSlotHarness })
 }
 
 function makeCommand(overrides: Partial<Command> = {}): Command {
@@ -75,12 +79,10 @@ function makePickCommand(run: Command['run'] = ok): Command {
 describe('CommandPromptContainer', () => {
   it('resolves a full typed line positionally and runs once', async () => {
     const run = vi.fn(ok)
-    render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
 
     await userEvent.type(screen.getByRole('textbox'), 'challenge alice starter{Enter}')
@@ -90,12 +92,10 @@ describe('CommandPromptContainer', () => {
 
   it('opens the guided prompt sequence in declaration order for a bare alias', async () => {
     const run = vi.fn(ok)
-    render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
     const input = screen.getByRole('textbox')
 
@@ -116,12 +116,10 @@ describe('CommandPromptContainer', () => {
       aliases: ['fireball'],
       availability: () => ({ enabled: false, reason: 'necesita MAGIC 14' }),
     })
-    render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[blocked]} state={lobbyState}>
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    renderPrompt(
+      <CommandRuntimeProvider commands={[blocked]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
 
     await userEvent.type(screen.getByRole('textbox'), 'fireball{Enter}')
@@ -131,12 +129,10 @@ describe('CommandPromptContainer', () => {
 
   it('drops a pending command on Esc without calling run', async () => {
     const run = vi.fn(ok)
-    render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
     const input = screen.getByRole('textbox')
 
@@ -151,12 +147,10 @@ describe('CommandPromptContainer', () => {
 
   it('drops a pending command when the player types cancel', async () => {
     const run = vi.fn(ok)
-    render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
     const input = screen.getByRole('textbox')
 
@@ -171,13 +165,11 @@ describe('CommandPromptContainer', () => {
 
   it('resolves a typed numeral mid-flow against the pending pick options', async () => {
     const run = vi.fn(ok)
-    render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[makePickCommand(run)]} state={lobbyState}>
-          <CommandListContainer />
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makePickCommand(run)]} state={lobbyState}>
+        <CommandListContainer />
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
     const input = screen.getByRole('textbox')
 
@@ -190,13 +182,11 @@ describe('CommandPromptContainer', () => {
   it('gives an explicit error and selects nothing when a pending pick numeral goes stale', async () => {
     const run = vi.fn(ok)
     const command = makePickCommand(run)
-    const { rerender } = render(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[command]} state={lobbyState}>
-          <CommandListContainer />
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+    const { rerender } = renderPrompt(
+      <CommandRuntimeProvider commands={[command]} state={lobbyState}>
+        <CommandListContainer />
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
     const input = screen.getByRole('textbox')
 
@@ -204,12 +194,10 @@ describe('CommandPromptContainer', () => {
     await userEvent.type(input, '2')
 
     rerender(
-      <PromptSlotHarness>
-        <CommandRuntimeProvider commands={[command]} state={battleState}>
-          <CommandListContainer />
-          <CommandPromptContainer />
-        </CommandRuntimeProvider>
-      </PromptSlotHarness>,
+      <CommandRuntimeProvider commands={[command]} state={battleState}>
+        <CommandListContainer />
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
     )
 
     await userEvent.type(input, '{Enter}')
