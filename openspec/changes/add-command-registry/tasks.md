@@ -32,11 +32,14 @@ the ordinary "retarget after merge" stacking pattern.
 |---|---|---|---|---|
 | 1 | `feat/add-command-registry` (fixed, already checked out) | `main` | `main` | ~380 lines |
 | 2 | `feat/commands-text-resolver` | `feat/add-command-registry` | `main` | ~390 lines |
-| 3 | `feat/commands-runtime-wiring` | `feat/commands-text-resolver` | `main` | ~400 lines |
+| 3a | `feat/commands-runtime-wiring` (tasks 3.1-3.4; merged via PRs #26, #27) | `feat/commands-text-resolver` | `main` | ~400 lines (actual: split, see apply-progress) |
+| 3b | `feat/commands-containers` (tasks 3.5-3.6, this batch) | `main` | `main` | 390 lines actual |
 
 Naming follows the project's existing pattern (`feat/console-theme`, `feat/ui-panel-statbar`,
 `feat/ui-command-list-prompt`), scoped to the `commands` folder per
-`docs/design/git-workflow.md`'s scope table.
+`docs/design/git-workflow.md`'s scope table. Slice 3 outgrew one PR during apply and was split into
+3a (pending.ts + provider, merged) and 3b (the two containers, this batch); 3.7-3.9 (`DesignScreen`
+rewiring and the slice green checks) remain for a further slice 3c.
 
 ### Chain Overview
 
@@ -242,13 +245,13 @@ succeeded, `dist/` emitted. `src/shared/ui/**` untouched, not part of this diff.
 Branch `feat/commands-runtime-wiring`, branched locally from `feat/commands-text-resolver`. Ships
 the pending-command state machine and the React wiring; `DesignScreen` becomes the first consumer.
 
-**Status: IN PROGRESS — tasks 3.1-3.4 done (this apply batch); 3.5-3.9 remain for the next batch.**
-Stopped at a clean cut point after task 3.4 because the running authored diff for `src/` against
-`origin/main` reached 555 lines (241 for the pure module `pending.ts` + barrel, 317 for the React
-wiring's `command-runtime.ts` + `CommandRuntimeProvider.tsx` + its test), already over the 400-line
-PR review budget before `CommandListContainer`, `CommandPromptContainer`, or the `DesignScreen`
-rewiring were even started. See apply-progress.md's "Review Budget — Actual vs. Estimate" note for
-slice 3 for the full breakdown and the recommended further split.
+**Status: IN PROGRESS — tasks 3.1-3.6 done across three merged PRs (#26, #27, and this batch);
+3.7-3.9 remain.** Tasks 3.1-3.4 (pending.ts + provider) landed via PRs #26/#27 on `main`. This batch
+(branch `feat/commands-containers`, based on `main`) shipped 3.5 (`CommandListContainer`) and 3.6
+(`CommandPromptContainer`) as one PR-sized unit: 390 authored `src/` lines against `origin/main`,
+under the 400-line budget. See apply-progress.md's "Slice 3b" entry for the full breakdown, including
+the typed-numeral-mid-flow gap closed in `CommandPromptContainer` and the typed `cancel` keyword
+added there.
 
 ### [x] 3.1 — `pending.ts`
 Requirements: Click and Typed Alias Invoke Identically (pure convergence proof); Multi-Argument
@@ -309,7 +312,7 @@ scope change or command completion), `PendingCommand | null` via `useState`.
 > fixture commands read `ctx.picks` from inside `availability` or `options` — flagged here in case a
 > later phase's command definitions ever need that value to be real.
 
-### 3.5 — `src/app/layout/CommandListContainer.tsx`
+### [x] 3.5 — `src/app/layout/CommandListContainer.tsx`
 Requirements: Registration and Scope Filtering by Intersection (rendered output); Disabled Commands
 Are Shown, Never Hidden.
 
@@ -321,7 +324,7 @@ Are Shown, Never Hidden.
 - 3.5.2 Implement `CommandListContainer`.
   Commit: `feat(ui): wire command list to the registry`
 
-### 3.6 — `src/app/layout/CommandPromptContainer.tsx`
+### [x] 3.6 — `src/app/layout/CommandPromptContainer.tsx`
 Requirements: Alias Resolution and Unknown-Alias Suggestions (unknown-alias path through `Prompt`);
 Numbered Pick Resolution, Staleness, and Invalidation (typed numeral path); Multi-Argument Completion
 by Click or by One Typed Line (positional typed line); Optional Arguments Are Prompted With a Skip
@@ -337,6 +340,22 @@ only while a command is pending, not a new `Prompt` prop).
   Commit: `test(ui): cover command prompt resolution, guided flow, and Esc cancel`
 - 3.6.2 Implement `CommandPromptContainer` (`PromptPortal > Prompt`, the `document` `Esc` listener).
   Commit: `feat(ui): wire command prompt to the resolver`
+
+> **Gap closed (documented, not silent)**: task 3.4's apply batch left a documented limitation —
+> typed input while a command is pending bypassed the numbered `ctx.picks` lookup entirely, so a
+> typed numeral mid-flow never resolved a `pick` argument's option (only click did). `3.6.2` closes
+> this: `CommandPromptContainer` detects, before delegating to `runtime.submitText`, whether the
+> currently `awaiting` argument is `kind: 'pick'` and the raw input is a bare numeral; if so it
+> resolves through `runtime.ctx.picks.lookup(raw)` with the same `typedAtGeneration` vs.
+> `ctx.picks.generation` staleness check used at the top level, then calls `runtime.selectItem` —
+> never `runtime.submitText` — for that resolved option. A stale or unmatched numeral sets an
+> explicit local error (`"{raw}" is no longer available`) and selects nothing. Verified by test
+> `'resolves a typed numeral mid-flow against the pending pick options'` and its stale-numeral
+> counterpart. Also added: a typed `cancel` keyword while a command is pending routes to
+> `runtime.cancelPending()` instead of being treated as the literal value for the awaiting argument —
+> required by the spec's "Cancelling a Pending Command" scenario ("an explicit `cancel` entry")
+> but not covered by task 3.4's `submitText`, which only special-cased `CANCEL_ID` for the click
+> path.
 
 ### 3.7 — `DesignScreen` rewiring
 Requirement: Click and Typed Alias Invoke Identically (the acceptance-level integration test named

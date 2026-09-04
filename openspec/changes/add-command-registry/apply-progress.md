@@ -407,3 +407,149 @@ Both PRs open with base `main` per the hard git rule. `feat/commands-runtime-wir
 
 Tasks 3.5-3.9 (`CommandListContainer`, `CommandPromptContainer`, `DesignScreen` rewiring, the
 `shared/ui` regression check, and the slice-3 green check) remain unstarted.
+
+## Slice 3b — Containers: COMPLETE (tasks 3.5-3.6)
+
+Branch `feat/commands-containers`, based on `main` (tasks 3.1-3.4 already merged via PRs #26/#27).
+Ships the two `src/app/layout/` containers that consume `CommandRuntimeProvider`.
+
+### Completed Tasks (this batch)
+
+- [x] 3.5 `src/app/layout/CommandListContainer.tsx` — maps `ctx.picks.items` onto `CommandList`
+- [x] 3.6 `src/app/layout/CommandPromptContainer.tsx` — `PromptPortal > Prompt`, `Esc` listener,
+  typed numeral mid-flow pick resolution, typed `cancel` keyword
+
+### Files Changed (this batch)
+
+| File | Action | What Was Done |
+|---|---|---|
+| `src/app/layout/CommandListContainer.tsx` | Created | `useCommandRuntime()` → maps every `NumberedItem` in `ctx.picks.items` onto a `CommandItem` (`id`, `label`, `key`, optional `hint`, optional `lockedReason`) and renders `<CommandList items={...} onSelect={selectItem} />`. Blocked-click prevention needs no extra logic: `CommandList` already sets `disabled={locked}` on the button, so a native disabled button never fires `onClick` |
+| `src/app/layout/CommandListContainer.test.tsx` | Created | 3 tests: exact adapter mapping (numbered key + label + hint), blocked command renders dimmed with its reason and a click never calls `run`, an enabled click reaches the single `command.run(...)` call site |
+| `src/app/layout/CommandPromptContainer.tsx` | Created | `PromptPortal > Prompt`; owns `value`/`typedAtGeneration`/`localError` state (per design.md's ownership table); a `document` `keydown` listener for `Escape`, attached only while `runtime.pending !== null` (decision D — `Prompt`'s props are frozen, untouched here); `handleSubmit` checks, in order: (1) pending + raw === `'cancel'` → `runtime.cancelPending()`; (2) pending + the `awaiting` arg is `kind: 'pick'` + raw is a bare numeral → resolve through `runtime.ctx.picks.lookup(raw)` with the same `typedAtGeneration !== ctx.picks.generation` staleness check used at the top level, then `runtime.selectItem(optionId)`; (3) otherwise → `runtime.submitText(raw, typedAtGeneration)`. `value`/`typedAtGeneration` reset after every submit; `typedAtGeneration` is snapshotted on the empty→non-empty `onChange` transition |
+| `src/app/layout/CommandPromptContainer.test.tsx` | Created | 6 tests (see TDD Cycle Evidence) using a local `PromptSlotHarness` (mirrors `AppShell`'s footer-ref slot pattern) and a `renderPrompt(ui)` helper (`render(ui, { wrapper: PromptSlotHarness })`) |
+| `openspec/changes/add-command-registry/tasks.md` | Modified | Marked 3.5-3.6 `[x]`, recorded the gap-closing note and the branch-plan split (3a/3b) |
+
+### TDD Cycle Evidence (this batch)
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|---|---|---|---|---|---|---|---|
+| 3.5 | `CommandListContainer.test.tsx` | Integration (RTL) | ✅ 32/32 project files green pre-batch (30 files/260 tests baseline) | ✅ Written (import to non-existent `./CommandListContainer` failed — confirmed via `pnpm vitest run`) | ✅ Passed (3/3) on first implementation, no fix cycle needed | ✅ 3 cases (mapping, blocked+click, enabled+click) | ➖ None needed — `eslint --fix` only reordered an import |
+| 3.6 | `CommandPromptContainer.test.tsx` | Integration (RTL) | ✅ (3.5 green) | ✅ Written (import to non-existent `./CommandPromptContainer` failed) | ✅ Passed (7/7 initial cases) after adding the `PromptSlotHarness` (first run failed with "Unable to find role textbox" because `PromptPortal` renders `null` with no slot in context — not a production bug, a missing test fixture) | ✅ 7 cases covering all of 3.6.1's list plus the mid-flow numeral gap-closing pair (resolves, and stale-rejects) | ✅ Merged 2 near-duplicate tests (Esc-drop, typed-cancel-drop) into 1 multi-assertion test to trim the line budget; re-ran green after the merge; also fixed an `exactOptionalPropertyTypes` `tsc` error by conditionally spreading the `error` prop instead of always passing `string \| undefined` |
+
+### Test Summary (this batch)
+
+- **Total tests written**: 9 (3 + 6, after the Esc/cancel merge — originally 10 before merging 2 into 1)
+- **Total tests passing**: `src/app/layout` 9/9 new; project-wide 32 files / 269 tests (baseline before
+  this batch: 30 files / 260 tests)
+- **Layers used**: Unit (0), Integration (9, RTL), E2E (0)
+- **Approval tests** (refactoring): None — no refactoring tasks in this batch
+- **Pure functions created**: 0 new pure functions — both containers are necessarily React components
+  (design decision F); `CommandPromptContainer`'s `pendingPickArg()`/`resetInput()` are plain
+  functions closing over hook state, not exported
+
+### Work Unit Evidence (this batch)
+
+| Evidence | Value |
+|---|---|
+| Focused test command and exact result | `pnpm vitest run src/app/layout/CommandListContainer.test.tsx` → 3/3 passing; `pnpm vitest run src/app/layout/CommandPromptContainer.test.tsx` → 6/6 passing |
+| Runtime harness command/scenario and exact result | `pnpm vitest run` (full suite) → 32 files / 269 tests passing (up from the 30/260 baseline); `pnpm exec tsc -b --noEmit` → clean; `pnpm exec eslint` on all changed files → clean; `pnpm build` (`tsc -b && vite build`) → succeeded, `dist/` emitted; `pnpm vitest run src/shared/ui` → 6 files / 47 tests passing, unmodified (task 3.8's regression check, run early as a dependency confirmation — task 3.8 itself is not yet marked done since it is its own task) |
+| Rollback boundary | Revert commits `46eb65b`..`769580c` (6 commits, this batch only: `CommandListContainer.tsx`+test, `CommandPromptContainer.tsx`+test, and the test-trimming follow-ups) — no other file touched, `src/shared/ui/**` untouched |
+
+### Deviations from Design (this batch)
+
+None from design.md's literal code/wiring description. One addition beyond the letter of task 3.6's
+own scenario list, flagged per this session's explicit request:
+
+1. **Typed `cancel` keyword now works mid-guided-flow, closing a gap task 3.4 left documented.**
+   `CommandRuntimeProvider.submitText` (already merged, task 3.4) only ever calls
+   `advance(command, pending, { kind: 'value', raw }, ctx)` for typed input while pending — there is
+   no typed-keyword branch there, only a click-driven `CANCEL_ID` special-case in `selectItem`. Without
+   a fix, typing the word `cancel` while a command is pending would have been treated as the literal
+   value for the awaiting argument (e.g. `build: 'cancel'`), contradicting the spec's "Cancelling a
+   Pending Command" requirement's explicit "types `cancel`" scenario. `CommandPromptContainer`
+   intercepts this case itself, before calling `submitText`, and routes it to `runtime.cancelPending()`
+   instead. This is a container-level fix, not a `CommandRuntimeProvider`/`pending.ts` change — neither
+   of those already-merged files was touched.
+2. **Typed numeral mid-flow now resolves through the numbered pick map, closing the other gap task 3.4
+   left documented.** Same root cause: `submitText`'s pending branch always calls `advance(... { kind:
+   'value', raw } ...)`, never checking whether `raw` is a numeral or whether `ctx.picks` (which,
+   while pending, is `numberOptions(...)` per `CommandRuntimeProvider`'s own `picks` computation) has a
+   matching entry. `CommandPromptContainer` now checks, before delegating: is the current `awaiting`
+   argument `kind: 'pick'`, and is `raw` a bare numeral? If so, it applies the exact same
+   `typedAtGeneration !== ctx.picks.generation` staleness check used by `resolve.ts` at the top level,
+   looks the numeral up via `ctx.picks.lookup(raw)`, and calls `runtime.selectItem(optionId)` — never
+   `runtime.submitText` — for a match. A stale or unmatched numeral sets an explicit local error
+   (`"{raw}" is no longer available"`) and selects nothing, exactly mirroring the top-level
+   `stale-number` outcome's user-facing behavior. Verified by the `'resolves a typed numeral mid-flow
+   against the pending pick options'` test (success path) and `'gives an explicit error and selects
+   nothing when a pending pick numeral goes stale'` (staleness path, using a `state` prop change on
+   `rerender` to bump `generation` between the keystroke and the submit).
+
+Neither addition touches `src/shared/commands/**`, `src/app/providers/**`, or `src/shared/ui/**` —
+both live entirely inside the new `CommandPromptContainer.tsx`.
+
+### Issues Found (this batch)
+
+1. **First `CommandPromptContainer.test.tsx` run failed all 7 cases with "Unable to find an accessible
+   element with the role textbox".** Cause: `PromptPortal` (already-shipped, `src/app/layout/`)
+   returns `null` when `usePromptSlot()` resolves to `null`, and the tests were not wrapping
+   `CommandRuntimeProvider` in a `PromptSlotContext` provider. Not a production defect — `AppShell`
+   already supplies the slot in the real app; the test suite needed its own minimal slot harness.
+   Fixed by adding a local `PromptSlotHarness` component (a `useState<HTMLElement | null>` plus a
+   `<div ref={setSlot} />`, mirroring `AppShell`'s own footer-ref pattern) and a `renderPrompt(ui)`
+   helper using Testing Library's `render(ui, { wrapper })` option (confirmed via the installed
+   `@testing-library/react@16.3` source that `rerender` reuses the same `wrapper` closure, so the
+   slot harness survives the stale-numeral test's mid-test `rerender` call).
+2. **`tsc -b` failed with `TS2375` under `exactOptionalPropertyTypes: true`** when always passing
+   `error={localError ?? runtime.promptError}` (typed `string | undefined`) to `Prompt`'s `error?:
+   string` prop. Fixed by conditionally spreading: `{...(error === undefined ? {} : { error })}`,
+   the same pattern already used elsewhere in this codebase for optional-prop objects.
+3. **Initial diff measured 414 authored `src/` lines against `origin/main`, 14 over the 400-line
+   budget**, because the review-budget check was run only after both containers and both test files
+   were already written, not before each unit as instructed. Trimmed back under budget without
+   removing coverage: replaced 7 repeated `<PromptSlotHarness>...</PromptSlotHarness>` wrapper blocks
+   with the single `renderPrompt`/`{ wrapper }` helper (saves ~24 lines), then merged the near-duplicate
+   Esc-drop and typed-cancel-drop tests into one multi-assertion test (saves ~15 lines), landing at
+   **390 lines**. Flagged here as a process deviation from the stated stop-before-crossing procedure,
+   not silently absorbed.
+
+### Review Budget — Actual vs. Estimate (Slice 3b)
+
+| File | Lines |
+|---|---|
+| `src/app/layout/CommandListContainer.tsx` | 16 |
+| `src/app/layout/CommandListContainer.test.tsx` | 74 |
+| `src/app/layout/CommandPromptContainer.tsx` | 104 |
+| `src/app/layout/CommandPromptContainer.test.tsx` | 196 |
+| **Total (`git diff --stat origin/main..HEAD -- src/`)** | **390** |
+
+**390 lines — under the 400-line PR review budget.** No `size:exception` needed. This slice combined
+tasks 3.5 and 3.6 into one PR-sized unit per this session's explicit instruction ("if only task 3.5
+fits, deliver only task 3.5" — both fit).
+
+### Remaining Tasks (slice 3 continuation)
+
+- [ ] 3.7 `DesignScreen` rewiring + test
+- [ ] 3.8 Regression check: `src/shared/ui/**` untouched (re-run and record formally as its own gate;
+  already confirmed green as part of this batch's Runtime harness evidence above)
+- [ ] 3.9 Slice 3 green check (full three-slice branch `pnpm test` + `pnpm build`, and the "Terminado
+  cuando" acceptance check — depends on 3.7 existing first)
+
+### Workload / PR Boundary (this batch)
+
+- Mode: chained/stacked PR slice (`auto-chain`, `stacked-to-main` per tasks.md's Branch plan)
+- Current work unit: Slice 3b — `CommandListContainer` + `CommandPromptContainer`
+- Boundary: starts from `main` (tasks 3.1-3.4 already merged via PRs #26/#27), ends with both
+  containers wired to `CommandRuntimeProvider` and independently green — `DesignScreen` itself is
+  untouched, still using its local `useState` (task 3.7's job)
+- Estimated review budget impact: 390 changed lines (all insertions, across 4 files) — under the
+  400-line budget
+
+### Status (Cumulative, end of this batch)
+
+18/30 tasks project-wide complete (7 slice-1 + 5 slice-2 + 6 slice-3 [3.1-3.6]). Slices 1-2 and slice
+3a (tasks 3.1-3.4) merged into `main` (PRs #23, #25, #26, #27). Slice 3b (tasks 3.5-3.6, this batch)
+is on branch `feat/commands-containers`, based on `main`, not yet opened as a PR — that remains the
+user's own step. Tasks 3.7-3.9 remain for a further slice 3c. The runtime attempt ledger's 1000-line
+cap (SDD process docs + `src/`) was not measured against for this settle; only the 400-line PR review
+budget on `src/**` was tracked per this session's explicit instruction.
