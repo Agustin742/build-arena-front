@@ -1,12 +1,18 @@
 import { createContext, use } from 'react'
 
-import { type CommandContext, type CommandRegistry, type PendingCommand } from '@/shared/commands'
+import {
+  type CommandContext,
+  type CommandRegistry,
+  type CommandResult,
+  type PendingCommand,
+} from '@/shared/commands'
 
 export interface CommandRuntime {
   ctx: CommandContext
   registry: CommandRegistry
   pending: PendingCommand | null
   promptError: string | undefined
+  lastResult: CommandResult | null
   selectItem: (id: string) => void
   submitText: (raw: string, typedAtGeneration: number | undefined) => void
   cancelPending: () => void
