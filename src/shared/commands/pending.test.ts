@@ -43,13 +43,10 @@ describe('begin', () => {
   })
 
   it('returns filled immediately when no argument is missing from seed', () => {
+    const command = makeCommand()
     const seed = { rival: 'grace', build: 'aggro' }
 
-    expect(begin(makeCommand(), seed)).toEqual({
-      kind: 'filled',
-      command: makeCommand(),
-      args: seed,
-    })
+    expect(begin(command, seed)).toEqual({ kind: 'filled', command, args: seed })
   })
 
   it('returns filled immediately for a command with zero arguments', () => {
