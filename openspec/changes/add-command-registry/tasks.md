@@ -245,13 +245,13 @@ succeeded, `dist/` emitted. `src/shared/ui/**` untouched, not part of this diff.
 Branch `feat/commands-runtime-wiring`, branched locally from `feat/commands-text-resolver`. Ships
 the pending-command state machine and the React wiring; `DesignScreen` becomes the first consumer.
 
-**Status: IN PROGRESS — tasks 3.1-3.6 done across three merged PRs (#26, #27, and this batch);
-3.7-3.9 remain.** Tasks 3.1-3.4 (pending.ts + provider) landed via PRs #26/#27 on `main`. This batch
-(branch `feat/commands-containers`, based on `main`) shipped 3.5 (`CommandListContainer`) and 3.6
-(`CommandPromptContainer`) as one PR-sized unit: 390 authored `src/` lines against `origin/main`,
-under the 400-line budget. See apply-progress.md's "Slice 3b" entry for the full breakdown, including
-the typed-numeral-mid-flow gap closed in `CommandPromptContainer` and the typed `cancel` keyword
-added there.
+**Status: COMPLETE — tasks 3.1-3.9 done across four batches (PRs #26, #27, #28, and this one).**
+Tasks 3.1-3.4 (pending.ts + provider) landed via PRs #26/#27 on `main`. Tasks 3.5-3.6 (the two
+containers) shipped via PR #28. Tasks 3.7-3.9 (this batch, branch `feat/commands-design-screen`,
+based on `main`) rewired `DesignScreen` to the command runtime and closed out slice 3's green check.
+See apply-progress.md's "Slice 3b" and "Slice 3c" entries for the full breakdown, including the
+typed-numeral-mid-flow gap closed in `CommandPromptContainer` and the typed `cancel` keyword added
+there.
 
 ### [x] 3.1 — `pending.ts`
 Requirements: Click and Typed Alias Invoke Identically (pure convergence proof); Multi-Argument
@@ -357,7 +357,7 @@ only while a command is pending, not a new `Prompt` prop).
 > but not covered by task 3.4's `submitText`, which only special-cased `CANCEL_ID` for the click
 > path.
 
-### 3.7 — `DesignScreen` rewiring
+### [x] 3.7 — `DesignScreen` rewiring
 Requirement: Click and Typed Alias Invoke Identically (the acceptance-level integration test named
 in Phase 4's "Terminado cuando").
 
@@ -369,17 +369,39 @@ in Phase 4's "Terminado cuando").
   `CommandListContainer`, `CommandPromptContainer`, and fixture commands.
   Commit: `feat(ui): rewire design screen to the command runtime`
 
-### 3.8 — Regression check: `src/shared/ui/**` untouched
+### [x] 3.8 — Regression check: `src/shared/ui/**` untouched
 No code change. Run the existing `src/shared/ui/*.test.tsx` suite and confirm every test still
 passes unmodified — design.md's stated acceptance signal that `CommandList`/`Prompt` props were
 never touched. Record the exact `pnpm test` output for these files as evidence; if any of them
 needed a change, that is a design violation to flag, not a fix to apply silently.
 
-### 3.9 — Slice 3 green check
+Verified: `git diff --stat origin/main..HEAD -- src/shared/ui/` returns empty (no changes in this
+branch). `pnpm vitest run src/shared/ui` → 6 test files / 47 tests passing, all unmodified.
+
+### [x] 3.9 — Slice 3 green check
 Run `pnpm test` and `pnpm build` on the full three-slice branch; both must pass. Confirm Phase 4's
 "Terminado cuando" from `implementation-plan.md`: a test proves click and alias invoke the same
 command with the same arguments (3.7.1), and a disabled command shows its reason instead of hiding
 (3.5.1, 1.4.1).
+
+Verified: `pnpm test` → 32 test files / 270 tests passing (baseline before this batch: 32 files / 269
+tests; +1 test, `src/app/routes/DesignScreen.test.tsx`). `pnpm build` → `tsc -b && vite build`
+succeeded, `dist/` emitted (342.58 kB JS, 14.02 kB CSS).
+
+**"Terminado cuando" evidence**:
+- Click and typed alias run the same command with the same arguments:
+  `src/app/routes/DesignScreen.test.tsx` — `'runs the same command with the same arguments whether
+  triggered by click or by a typed alias'` — clicks `FIREBALL`, completes the guided prompt for its
+  `target` arg, then types the full line `fireball dragon`, and asserts the rendered
+  `Ejecutaste fireball con {"target":"dragon"}` log text is byte-identical both times.
+- A disabled command is shown with its reason instead of hidden:
+  `src/app/routes/DesignScreen.test.tsx` — `'reaches the locked command without being able to run
+  it'` — the `MIND_SPIKE` button is present and disabled, never absent.
+  `src/app/layout/CommandListContainer.test.tsx` — `'renders a blocked command dimmed with its
+  reason and never runs it on click'` — the `lockedReason` text is visible and a click never calls
+  `run`.
+  `src/shared/commands/registry.test.ts` — `'includes a blocked command paired with its availability
+  result, not omitted'` — the registry-level guarantee both container tests build on.
 
 ---
 

@@ -527,15 +527,7 @@ both live entirely inside the new `CommandPromptContainer.tsx`.
 tasks 3.5 and 3.6 into one PR-sized unit per this session's explicit instruction ("if only task 3.5
 fits, deliver only task 3.5" — both fit).
 
-### Remaining Tasks (slice 3 continuation)
-
-- [ ] 3.7 `DesignScreen` rewiring + test
-- [ ] 3.8 Regression check: `src/shared/ui/**` untouched (re-run and record formally as its own gate;
-  already confirmed green as part of this batch's Runtime harness evidence above)
-- [ ] 3.9 Slice 3 green check (full three-slice branch `pnpm test` + `pnpm build`, and the "Terminado
-  cuando" acceptance check — depends on 3.7 existing first)
-
-### Workload / PR Boundary (this batch)
+### Workload / PR Boundary (slice 3b)
 
 - Mode: chained/stacked PR slice (`auto-chain`, `stacked-to-main` per tasks.md's Branch plan)
 - Current work unit: Slice 3b — `CommandListContainer` + `CommandPromptContainer`
@@ -545,11 +537,117 @@ fits, deliver only task 3.5" — both fit).
 - Estimated review budget impact: 390 changed lines (all insertions, across 4 files) — under the
   400-line budget
 
+## Slice 3c — `DesignScreen` rewiring and slice-3 close: COMPLETE (tasks 3.7-3.9), this batch
+
+Branch `feat/commands-design-screen`, based on `main` directly (PR #28 already merged, so this branch
+started from an up-to-date `main`). NOT yet opened as a PR — that is the user's own step. This batch
+closes Phase 4.
+
+### Files
+
+- `src/app/routes/DesignScreen.tsx` (rewritten, net +125/-77 lines): local `useState` wiring replaced
+  by `CommandRuntimeProvider` (fixture `CommandState` with `battleId` set and `reactionWindowOpen:
+  true`, so both `battle`- and `reaction-window`-scoped fixture commands are simultaneously visible
+  in one list), `CommandListContainer`, and `CommandPromptContainer`. Five fixture commands:
+  `power_strike` and `fireball` (`fireball` carries one required `text` arg, `target`, for the
+  click/typed convergence proof), `mind_spike` (blocked, `'necesita MAGIC 14'`, preserves the
+  pre-existing locked-command test), `parry`, `brace`. Each fixture's `run` synchronously reports
+  `{ commandId, args }` into local state, rendered as `Ejecutaste {commandId} con {JSON.stringify(args)}`
+  in a `LogLine` — the visible signal the new acceptance test reads, since
+  `CommandRuntimeProvider.runCommand` discards the `run()` promise (`void command.run(args, ctx)`)
+  and exposes no other completion hook.
+- `src/app/routes/DesignScreen.test.tsx` (+17 lines, one new test): added
+  `'runs the same command with the same arguments whether triggered by click or by a typed alias'`.
+  The 4 pre-existing tests needed zero changes — the fixture set was chosen specifically to keep every
+  prior assertion valid (a region `Panel`, a `meter` `StatBar`, `buttons.length > 0`, a `timer`
+  `Countdown`, a `textbox` named `/comando/i` via `Prompt`'s own default `label`, the static
+  `— Ronda 3 —` `LogLine`, the prompt portaled into the shell footer, full-keyboard reachability, and
+  the `MIND_SPIKE` button present-but-disabled).
+
+### Gap closed
+
+Phase 4's "Terminado cuando" (`implementation-plan.md`) had two acceptance signals; the disabled-command
+half was already proven by task 3.5.1 and 1.4.1's tests, but the click/typed-convergence half had no
+acceptance-level test through the actually-wired screen — only isolated unit-level proofs (`pending.ts`'s
+convergence assertion, and each container's own test proving its own path in isolation, never both
+paths against the same rendered instance). `3.7.1` closes this directly: one test renders the real
+`DesignScreen`, drives the `fireball` command once through click + guided prompt and once through a
+fully typed line, and asserts the two resulting `Ejecutaste ...` log lines are string-identical.
+
+### Deviations/issues this batch
+
+1. Original `DesignScreen` had two separate `CommandList` panels (`ACTIONS`, `REACTIONS`) built from
+   hard-coded arrays independent of any registry or scope. `deriveScopes`'s state table makes `lobby`
+   and `battle`/`reaction-window` mutually exclusive per `CommandState`, so a single
+   `CommandRuntimeProvider` cannot reproduce two independently-scoped static lists — it produces one
+   `ctx.picks` list, period. Collapsed to one `Panel`/`CommandListContainer` showing every
+   currently-visible fixture command together (all five appear at once because the fixture state
+   activates both `battle` and `reaction-window`). Not flagged as a design violation: design.md
+   explicitly names `CommandListContainer` singular and describes one `ctx.picks` pipeline; the
+   two-panel split was a leftover of the pre-registry local-`useState` demo, not a documented
+   requirement.
+2. The original screen's static `decline` reaction entry (`{ id: 'decline', key: 'enter', ... }`) was
+   a hand-authored `CommandItem`, not derivable from a `Command` definition (its `key` is `'enter'`,
+   not a registry-assigned numeral). Dropped — no test referenced it, and design.md's adapter maps
+   `NumberedItem -> CommandItem` 1:1 with registry-assigned keys only.
+3. The original `Prompt`'s `hint` prop (`"1 o 2 para elegir..."`) has no equivalent in
+   `CommandPromptContainer`, which does not accept or forward a `hint`. Not a regression introduced
+   this batch — `CommandPromptContainer` already shipped without a `hint` prop in slice 3b; no test
+   in this repository asserts on `Prompt`'s hint text, so nothing broke, but flagging since the
+   original demo screen visibly lost that instructional line.
+
+### Evidence
+
+`pnpm vitest run src/app/routes/DesignScreen.test.tsx` → RED (before implementation): 4 passed, 1
+failed (`Unable to find an element with the text: /Ejecutaste fireball/i`) — confirms the new test
+exercised only the not-yet-wired screen. → GREEN (after implementation): 5/5 passed.
+`git diff --stat origin/main..HEAD -- src/shared/ui/` → empty (task 3.8; `src/shared/ui/**`
+untouched). `pnpm vitest run src/shared/ui` → 6 files / 47 tests, unmodified (task 3.8).
+Full suite: `pnpm test` → 32 files / 270 tests (baseline before this batch: 32 files / 269 tests).
+`pnpm exec tsc -b --noEmit` → clean. `pnpm build` → `tsc -b && vite build` succeeded, `dist/` emitted
+(342.58 kB JS / 106.64 kB gzip, 14.02 kB CSS / 3.76 kB gzip). `pnpm exec eslint
+src/app/routes/DesignScreen.tsx src/app/routes/DesignScreen.test.tsx` → clean.
+
+### "Terminado cuando" (Phase 4) — explicit demonstration
+
+- **Click and typed alias run the same command with the same arguments**:
+  `src/app/routes/DesignScreen.test.tsx` — test
+  `'runs the same command with the same arguments whether triggered by click or by a typed alias'`.
+  Clicks the `FIREBALL` button (→ `CommandListContainer` → `selectItem('fireball')` →
+  `begin(fireballCommand)`, opens the guided prompt for its `target` arg), types `dragon{Enter}` to
+  complete it, captures the rendered `Ejecutaste fireball con {"target":"dragon"}` text, then types
+  the full line `fireball dragon{Enter}` (→ `resolve()` → alias match → positional parse → `begin`
+  short-circuits straight to `filled`), captures the same log text again, and asserts the two
+  captures are `toBe`-equal plus contain the exact expected argument JSON.
+- **A disabled command is shown with its reason instead of hidden**:
+  `src/app/routes/DesignScreen.test.tsx` — test `'reaches the locked command without being able to
+  run it'` (pre-existing, unchanged): the `MIND_SPIKE` button is present in the DOM and `toBeDisabled()`.
+  `src/app/layout/CommandListContainer.test.tsx` — test `'renders a blocked command dimmed with its
+  reason and never runs it on click'`: asserts the `lockedReason` text (`'necesita MAGIC 14'`) is
+  visible, the button is disabled, and a click never calls `command.run`.
+  `src/shared/commands/registry.test.ts` — test `'includes a blocked command paired with its
+  availability result, not omitted'`: the registry-level guarantee (`visible()` never drops a blocked
+  command) that both container-level tests above depend on.
+
+### Review budget — PASSED, no exception needed
+
+`git diff --stat origin/main..HEAD -- src/` = 219 lines: `DesignScreen.tsx` 125+77(=202 changed, but
+only insertions/deletions of a rewrite, not a pure add) + `DesignScreen.test.tsx` 17 insertions. Well
+under the 400-line budget — no chaining or exception needed for this final slice-3 batch.
+
+Commits this batch (`feat/commands-design-screen`, based on `main`): `70a85d1 test(ui): cover click
+and typed input resolving to same command`, `220d187 feat(ui): rewire design screen to the command
+runtime`, plus this docs commit marking 3.7-3.9 complete and recording apply-progress.
+
+### Remaining Tasks
+
+None — Phase 4 (`add-command-registry`) is complete. All 30 tasks across slices 1, 2, and 3 (3a/3b/3c)
+are `[x]`. Slices 1, 2, and 3a are merged into `main` (PRs #23, #25, #26, #27); slice 3b is merged via
+PR #28. Slice 3c (this batch, branch `feat/commands-design-screen`) is ready for the user to open as
+the final PR in the stack, targeting `main` per the HARD GIT RULE.
+
 ### Status (Cumulative, end of this batch)
 
-18/30 tasks project-wide complete (7 slice-1 + 5 slice-2 + 6 slice-3 [3.1-3.6]). Slices 1-2 and slice
-3a (tasks 3.1-3.4) merged into `main` (PRs #23, #25, #26, #27). Slice 3b (tasks 3.5-3.6, this batch)
-is on branch `feat/commands-containers`, based on `main`, not yet opened as a PR — that remains the
-user's own step. Tasks 3.7-3.9 remain for a further slice 3c. The runtime attempt ledger's 1000-line
-cap (SDD process docs + `src/`) was not measured against for this settle; only the 400-line PR review
-budget on `src/**` was tracked per this session's explicit instruction.
+30/30 tasks project-wide complete (7 slice-1 + 5 slice-2 + 12 slice-3 [3.1-3.9, with 3.5/3.6 split
+into their own containers and 3.7-3.9 this batch]). This closes Phase 4 / change `add-command-registry`.
+Next recommended step: `sdd-verify`, then archive once verified.

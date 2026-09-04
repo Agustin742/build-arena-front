@@ -71,4 +71,38 @@ describe('CommandListContainer', () => {
 
     expect(run).toHaveBeenCalledTimes(1)
   })
+
+  it('drops the pending command when the numbered Cancel entry is clicked', async () => {
+    const run = vi.fn(() => Promise.resolve({ status: 'ok' as const }))
+    const withPick = makeCommand({
+      id: 'challenge',
+      label: 'CHALLENGE',
+      args: [
+        {
+          name: 'rival',
+          kind: 'pick',
+          label: 'Rival',
+          required: true,
+          options: () => [{ id: 'nox', label: 'NOX' }],
+        },
+      ],
+      run,
+    })
+
+    render(
+      <CommandRuntimeProvider commands={[withPick]} state={lobbyState}>
+        <CommandListContainer />
+      </CommandRuntimeProvider>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /CHALLENGE/ }))
+
+    expect(screen.getByRole('button', { name: /NOX/ })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Cancel/ }))
+
+    expect(screen.getByRole('button', { name: /CHALLENGE/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /NOX/ })).not.toBeInTheDocument()
+    expect(run).not.toHaveBeenCalled()
+  })
 })
