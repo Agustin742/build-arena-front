@@ -337,9 +337,9 @@ already produced:
 | `src/app/providers/command-runtime.ts` | 25 |
 | `src/app/providers/CommandRuntimeProvider.tsx` | 180 |
 | `src/app/providers/CommandRuntimeProvider.test.tsx` | 112 |
-| **Total (`git diff --stat origin/main..HEAD -- src/`)** | **558** |
+| **Total (`git diff --stat origin/main..HEAD -- src/`)** | **555** |
 
-**558 lines already exceeds the 400-line PR review budget by 158 lines, before three more files
+**555 lines already exceeds the 400-line PR review budget by 155 lines, before three more files
 (`CommandListContainer.tsx`+test, `CommandPromptContainer.tsx`+test, `DesignScreen.tsx` rewiring+test)
 that design.md itself expected to be the *larger* remaining share of the slice.** Per this session's
 explicit instruction ("If the total crosses 400, STOP at the last complete unit... do NOT keep
@@ -348,7 +348,7 @@ going"), apply stopped here rather than continuing past budget.
 **Recommended further split for the next apply batch(es)**, in priority order:
 
 - Slice 3a (this batch, already committed): `pending.ts` + barrel + `command-runtime.ts` +
-  `CommandRuntimeProvider.tsx` — 558 lines. Already over 400 on its own; if a hard 400 cap is
+  `CommandRuntimeProvider.tsx` — 555 lines. Already over 400 on its own; if a hard 400 cap is
   non-negotiable per PR, `pending.ts`+test (240 lines) and the provider unit (317 lines) are each
   independently green and could ship as two separate PRs instead of one.
 - Slice 3b: `CommandListContainer.tsx` + test (task 3.5) — estimated ~70-100 lines based on the
@@ -381,8 +381,8 @@ for one design-estimated ~400-line slice, on top of the two slices already shipp
   a self-contained, independently green `pending.ts` + `CommandRuntimeProvider` (registry, scopes,
   numbered picks, pending state, the single `command.run(...)` call site) — no UI containers, no
   `DesignScreen` change yet
-- Estimated review budget impact: 558 changed lines (all insertions, across 6 files) — **over the
-  400-line budget by 158 lines**, see "Review Budget — Actual vs. Estimate" above
+- Estimated review budget impact: 555 changed lines (all insertions, across 6 files) — **over the
+  400-line budget by 155 lines**, see "Review Budget — Actual vs. Estimate" above
 
 ### Status (Cumulative, end of this batch)
 
@@ -390,4 +390,4 @@ for one design-estimated ~400-line slice, on top of the two slices already shipp
 this counts 3.1-3.4 of slice 3's 9 tasks). Slices 1-2 merged into `main` (PRs #23, #25). Slice 3 is
 IN PROGRESS on `feat/commands-runtime-wiring`, not yet ready for a PR: tasks 3.5-3.9 remain, and the
 Review Budget section above needs a decision before any further apply batch continues past the
-current 558-line diff.
+current 555-line diff.

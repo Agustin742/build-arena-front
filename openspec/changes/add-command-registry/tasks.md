@@ -244,7 +244,7 @@ the pending-command state machine and the React wiring; `DesignScreen` becomes t
 
 **Status: IN PROGRESS — tasks 3.1-3.4 done (this apply batch); 3.5-3.9 remain for the next batch.**
 Stopped at a clean cut point after task 3.4 because the running authored diff for `src/` against
-`origin/main` reached 558 lines (241 for the pure module `pending.ts` + barrel, 317 for the React
+`origin/main` reached 555 lines (241 for the pure module `pending.ts` + barrel, 317 for the React
 wiring's `command-runtime.ts` + `CommandRuntimeProvider.tsx` + its test), already over the 400-line
 PR review budget before `CommandListContainer`, `CommandPromptContainer`, or the `DesignScreen`
 rewiring were even started. See apply-progress.md's "Review Budget — Actual vs. Estimate" note for
