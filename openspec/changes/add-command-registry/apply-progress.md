@@ -391,3 +391,19 @@ this counts 3.1-3.4 of slice 3's 9 tasks). Slices 1-2 merged into `main` (PRs #2
 IN PROGRESS on `feat/commands-runtime-wiring`, not yet ready for a PR: tasks 3.5-3.9 remain, and the
 Review Budget section above needs a decision before any further apply batch continues past the
 current 555-line diff.
+
+### Slice 3a delivery — resolved by splitting into two PRs
+
+The 555-line risk above was resolved before any PR was opened. Neither branch had been published,
+so the work was reorganised into two, each verified green on its own:
+
+| Branch | Contents | Authored `src/**` lines | Tests |
+|---|---|---|---|
+| `feat/commands-pending-flow` | `pending.ts` + tests, barrel export (tasks 3.1-3.2) | 238 | 257 passing, 29 files |
+| `feat/commands-runtime-wiring` | `command-runtime.ts`, `CommandRuntimeProvider.tsx` + tests (tasks 3.3-3.4) | 317 | 260 passing, 30 files |
+
+Both PRs open with base `main` per the hard git rule. `feat/commands-runtime-wiring` shows the full
+555 lines until `feat/commands-pending-flow` is integrated, after which it shows its own 317.
+
+Tasks 3.5-3.9 (`CommandListContainer`, `CommandPromptContainer`, `DesignScreen` rewiring, the
+`shared/ui` regression check, and the slice-3 green check) remain unstarted.
