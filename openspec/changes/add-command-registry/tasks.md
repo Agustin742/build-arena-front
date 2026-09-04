@@ -242,7 +242,15 @@ succeeded, `dist/` emitted. `src/shared/ui/**` untouched, not part of this diff.
 Branch `feat/commands-runtime-wiring`, branched locally from `feat/commands-text-resolver`. Ships
 the pending-command state machine and the React wiring; `DesignScreen` becomes the first consumer.
 
-### 3.1 — `pending.ts`
+**Status: IN PROGRESS — tasks 3.1-3.4 done (this apply batch); 3.5-3.9 remain for the next batch.**
+Stopped at a clean cut point after task 3.4 because the running authored diff for `src/` against
+`origin/main` reached 555 lines (241 for the pure module `pending.ts` + barrel, 317 for the React
+wiring's `command-runtime.ts` + `CommandRuntimeProvider.tsx` + its test), already over the 400-line
+PR review budget before `CommandListContainer`, `CommandPromptContainer`, or the `DesignScreen`
+rewiring were even started. See apply-progress.md's "Review Budget — Actual vs. Estimate" note for
+slice 3 for the full breakdown and the recommended further split.
+
+### [x] 3.1 — `pending.ts`
 Requirements: Click and Typed Alias Invoke Identically (pure convergence proof); Multi-Argument
 Completion by Click or by One Typed Line; Optional Arguments Are Prompted With a Skip Exit;
 Cancelling a Pending Command.
@@ -259,20 +267,20 @@ Cancelling a Pending Command.
 - 3.1.2 Implement `begin`, `advance`, `SKIP_ID`, `CANCEL_ID` per design.md.
   Commit: `feat(commands): add guided pending command flow`
 
-### 3.2 — Barrel (final surface)
+### [x] 3.2 — Barrel (final surface)
 Add `begin`, `advance`, `SKIP_ID`, `CANCEL_ID` to `index.ts`. This completes the barrel described in
 design.md's "public barrel" section.
 
 - Commit: `feat(commands): export pending command flow from barrel`
 
-### 3.3 — `src/app/providers/command-runtime.ts`
+### [x] 3.3 — `src/app/providers/command-runtime.ts`
 Create the context object and `useCommandRuntime()` hook, mirroring the shape of the existing
 `prompt-slot.ts` provider file. No test commit — a thin context definition with no branching logic;
 covered indirectly by 3.4's and 3.5/3.6's tests.
 
 - Commit: `feat(providers): add command runtime context`
 
-### 3.4 — `src/app/providers/CommandRuntimeProvider.tsx`
+### [x] 3.4 — `src/app/providers/CommandRuntimeProvider.tsx`
 Per design.md's "State shape and ownership" table: registry via `useRef` (created once), `activeScopes`
 via `useMemo(deriveScopes)`, the `NumberedList` via `useMemo` over `visible(ctx)` (new `generation` on
 scope change or command completion), `PendingCommand | null` via `useState`.
@@ -283,6 +291,23 @@ scope change or command completion), `PendingCommand | null` via `useState`.
   Commit: `test(providers): cover command runtime provider state transitions`
 - 3.4.2 Implement `CommandRuntimeProvider`.
   Commit: `feat(providers): add command runtime provider`
+
+> **Deviation (documented, not silent)**: design.md's prose says "registry via `useRef`", but the
+> project's installed `eslint-plugin-react-hooks` enforces the React Compiler-era `react-hooks/refs`
+> and `react-hooks/purity` rules, which reject reading or writing a `ref.current` anywhere in a
+> render/`useMemo` body (only event handlers/effects may touch refs) and reject impure calls like
+> `performance.now()` inside `useMemo`. `registry` is created once via a lazy `useState(() =>
+> createCommandRegistry(commands))` initializer instead — same one-instance-per-mount guarantee as
+> `useRef`, verified by task 3.4.1's "registry instance stable across re-renders" test, but expressed
+> as state so the linter accepts reading it during render. `generation` is a `useState<number>`
+> counter bumped explicitly: inside `runCommand` (event-handler context, always safe) for command
+> completion, and via a guarded synchronous state update during render — `if (priorScopes !==
+> activeScopes) { setPriorScopes(activeScopes); setGeneration(g => g + 1) }` — for scope changes, which
+> is React's own documented "adjust state during render" pattern and not flagged as impure. The
+> previous-picks value fed into `options(ctx)`/`availability(ctx)` computations uses the stable
+> `EMPTY_NUMBERED_LIST` constant instead of a ref-tracked previous list, since none of this slice's
+> fixture commands read `ctx.picks` from inside `availability` or `options` — flagged here in case a
+> later phase's command definitions ever need that value to be real.
 
 ### 3.5 — `src/app/layout/CommandListContainer.tsx`
 Requirements: Registration and Scope Filtering by Intersection (rendered output); Disabled Commands
