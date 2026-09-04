@@ -66,4 +66,21 @@ describe('DesignScreen', () => {
 
     expect(screen.getByRole('button', { name: /MIND_SPIKE/ })).toBeDisabled()
   })
+
+  it('runs the same command with the same arguments whether triggered by click or by a typed alias', async () => {
+    renderDesign()
+    const input = screen.getByRole('textbox')
+
+    await userEvent.click(screen.getByRole('button', { name: /FIREBALL/ }))
+    await userEvent.type(input, 'dragon{Enter}')
+
+    const afterClick = screen.getByText(/Ejecutaste fireball/i).textContent
+
+    await userEvent.type(input, 'fireball dragon{Enter}')
+
+    const afterTyped = screen.getByText(/Ejecutaste fireball/i).textContent
+
+    expect(afterClick).toContain('"target":"dragon"')
+    expect(afterClick).toBe(afterTyped)
+  })
 })
