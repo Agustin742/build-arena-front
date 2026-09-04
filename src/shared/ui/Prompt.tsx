@@ -4,6 +4,7 @@ interface PromptProps {
   value: string
   onChange: (value: string) => void
   onSubmit: (value: string) => void
+  type?: 'text' | 'password'
   hint?: string
   error?: string
   disabled?: boolean
@@ -14,6 +15,7 @@ export function Prompt({
   value,
   onChange,
   onSubmit,
+  type = 'text',
   hint,
   error,
   disabled = false,
@@ -49,7 +51,7 @@ export function Prompt({
 
         <input
           id={inputId}
-          type="text"
+          type={type}
           value={value}
           disabled={disabled}
           autoComplete="off"
