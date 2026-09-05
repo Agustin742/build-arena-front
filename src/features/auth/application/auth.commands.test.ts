@@ -108,7 +108,7 @@ describe('createAuthCommands', () => {
         ctx,
       )
 
-      expect(result).toEqual({ status: 'error', message: 'Tu sesión terminó. Volvé a entrar' })
+      expect(result).toEqual({ status: 'error', message: 'Email o contraseña incorrectos' })
       expect(session.setTokens).not.toHaveBeenCalled()
       expect(session.setUser).not.toHaveBeenCalled()
     })
@@ -176,7 +176,7 @@ describe('createAuthCommands', () => {
         ctx,
       )
 
-      expect(result.status).toBe('error')
+      expect(result).toEqual({ status: 'error', message: 'Ese email o usuario ya está tomado' })
       expect(api.login).not.toHaveBeenCalled()
       expect(session.setTokens).not.toHaveBeenCalled()
     })
@@ -234,6 +234,15 @@ describe('createAuthCommands', () => {
   })
 
   describe('me', () => {
+    it('still reports an expired session, because here a 401 really is one', async () => {
+      const api = makeApi({ me: throwing(401) })
+      const commands = createAuthCommands({ api, session: makeSession() })
+
+      const result = await commandNamed(commands, 'me').run({}, ctx)
+
+      expect(result).toEqual({ status: 'error', message: 'Tu sesión terminó. Volvé a entrar' })
+    })
+
     it('refreshes the stored profile and names the player', async () => {
       const api = makeApi()
       const session = makeSession()
