@@ -25,7 +25,9 @@ describe('useSessionBootstrap', () => {
     useSessionStore.getState().setTokens(pair)
     const fetchProfile = vi.fn(() => Promise.resolve(profile))
 
-    renderHook(() => useSessionBootstrap({ fetchProfile }))
+    renderHook(() => {
+      useSessionBootstrap({ fetchProfile })
+    })
 
     await waitFor(() => {
       expect(useSessionStore.getState().user).toEqual(profile)
@@ -36,7 +38,9 @@ describe('useSessionBootstrap', () => {
   it('asks for nothing when there is no stored session', () => {
     const fetchProfile = vi.fn(() => Promise.resolve(profile))
 
-    renderHook(() => useSessionBootstrap({ fetchProfile }))
+    renderHook(() => {
+      useSessionBootstrap({ fetchProfile })
+    })
 
     expect(fetchProfile).not.toHaveBeenCalled()
   })
@@ -46,7 +50,9 @@ describe('useSessionBootstrap', () => {
     useSessionStore.getState().setUser(profile)
     const fetchProfile = vi.fn(() => Promise.resolve(profile))
 
-    renderHook(() => useSessionBootstrap({ fetchProfile }))
+    renderHook(() => {
+      useSessionBootstrap({ fetchProfile })
+    })
 
     expect(fetchProfile).not.toHaveBeenCalled()
   })
@@ -57,7 +63,9 @@ describe('useSessionBootstrap', () => {
       Promise.reject(new ApiError('nope', { status: 401, payload: undefined })),
     )
 
-    renderHook(() => useSessionBootstrap({ fetchProfile }))
+    renderHook(() => {
+      useSessionBootstrap({ fetchProfile })
+    })
 
     await waitFor(() => {
       expect(useSessionStore.getState().accessToken).toBeNull()
@@ -70,19 +78,25 @@ describe('useSessionBootstrap', () => {
       Promise.reject(new ApiError('offline', { status: null, payload: undefined })),
     )
 
-    const { result } = renderHook(() => useSessionBootstrap({ fetchProfile }))
+    renderHook(() => {
+      useSessionBootstrap({ fetchProfile })
+    })
 
     await waitFor(() => {
-      expect(result.current.checked).toBe(true)
+      expect(fetchProfile).toHaveBeenCalled()
     })
+
     expect(useSessionStore.getState().accessToken).toBe('access-1')
+    expect(useSessionStore.getState().refreshToken).toBe('refresh-1')
   })
 
   it('runs once, not on every render', async () => {
     useSessionStore.getState().setTokens(pair)
     const fetchProfile = vi.fn(() => Promise.resolve(profile))
 
-    const { rerender } = renderHook(() => useSessionBootstrap({ fetchProfile }))
+    const { rerender } = renderHook(() => {
+      useSessionBootstrap({ fetchProfile })
+    })
 
     await waitFor(() => {
       expect(useSessionStore.getState().user).toEqual(profile)
