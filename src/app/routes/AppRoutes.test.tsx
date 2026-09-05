@@ -1,8 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+import { useSessionStore } from '@/features/auth'
 
 import { AppRoutes } from './AppRoutes'
+
+const pair = { accessToken: 'access-1', refreshToken: 'refresh-1' }
 
 function renderAt(path: string) {
   return render(
@@ -13,6 +17,10 @@ function renderAt(path: string) {
 }
 
 describe('AppRoutes', () => {
+  beforeEach(() => {
+    useSessionStore.getState().clear()
+  })
+
   it.each([
     ['/login', 'entrar'],
     ['/register', 'crear cuenta'],
@@ -32,10 +40,27 @@ describe('AppRoutes', () => {
     ['/battles', 'battles'],
     ['/battles/42', 'arena'],
     ['/leaderboard', 'leaderboard'],
-  ])('renders the %s screen', (path, screenName) => {
+  ])('renders the %s screen to a player with a session', (path, screenName) => {
+    useSessionStore.getState().setTokens(pair)
+
     renderAt(path)
 
     expect(screen.getByRole('heading', { name: screenName })).toBeInTheDocument()
+  })
+
+  it.each([
+    ['/'],
+    ['/builds'],
+    ['/builds/new'],
+    ['/builds/42'],
+    ['/friends'],
+    ['/battles'],
+    ['/battles/42'],
+    ['/leaderboard'],
+  ])('sends an anonymous visitor from %s to the login console', (path) => {
+    renderAt(path)
+
+    expect(screen.getByRole('heading', { name: 'entrar' })).toBeInTheDocument()
   })
 
   it('renders a not found screen for an unknown deep route', () => {
@@ -45,6 +70,8 @@ describe('AppRoutes', () => {
   })
 
   it('keeps the app shell around every screen', () => {
+    useSessionStore.getState().setTokens(pair)
+
     renderAt('/leaderboard')
 
     expect(screen.getByRole('banner')).toHaveTextContent('build arena')
