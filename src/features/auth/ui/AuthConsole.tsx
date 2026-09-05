@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { CommandListContainer } from '@/app/layout/CommandListContainer'
 import { CommandPromptContainer } from '@/app/layout/CommandPromptContainer'
 import { CommandResultLine } from '@/app/layout/CommandResultLine'
+import { CommandTranscript } from '@/app/layout/CommandTranscript'
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
 import { type Command, type CommandState } from '@/shared/commands'
 import { Panel } from '@/shared/ui'
@@ -35,6 +36,7 @@ export function AuthConsole({ title, commands }: AuthConsoleProps) {
         </Panel>
 
         <CommandResultLine />
+        <CommandTranscript />
       </div>
 
       <CommandPromptContainer />
