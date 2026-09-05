@@ -97,7 +97,7 @@ describe('AuthConsole', () => {
     await userEvent.type(screen.getByRole('textbox'), 'ada@arena.dev{Enter}')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'wrongpassword{Enter}')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/sesión terminó/i)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/email o contraseña incorrectos/i)
     expect(useSessionStore.getState().accessToken).toBeNull()
   })
 

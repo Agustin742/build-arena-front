@@ -8,9 +8,11 @@ export function CommandResultLine() {
     return null
   }
 
+  const failed = lastResult.status === 'error'
+
   return (
-    <div role="status" className="flex flex-col">
-      <LogLine marker="»" tone={lastResult.status === 'ok' ? 'success' : 'error'}>
+    <div role={failed ? 'alert' : 'status'} className="flex flex-col">
+      <LogLine marker="»" tone={failed ? 'error' : 'success'}>
         {lastResult.message}
       </LogLine>
     </div>

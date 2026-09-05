@@ -23,7 +23,6 @@ import {
   type ResolveOutcome,
   SKIP_ID,
 } from '@/shared/commands'
-
 import { toGameMessage } from '@/shared/http'
 
 import { CommandRuntimeContext } from './command-runtime'
@@ -80,16 +79,9 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
     command.run(args, ctx).then(
       (result) => {
         setLastResult(result)
-
-        if (result.status === 'error') {
-          setPromptError(result.message)
-        }
       },
       (cause: unknown) => {
-        const message = toGameMessage(cause)
-
-        setLastResult({ status: 'error', message })
-        setPromptError(message)
+        setLastResult({ status: 'error', message: toGameMessage(cause) })
       },
     )
   }

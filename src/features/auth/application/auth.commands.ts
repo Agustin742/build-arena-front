@@ -1,6 +1,6 @@
 import { type Command, type CommandResult } from '@/shared/commands'
 import { type PublicUser, type TokenPair } from '@/shared/contracts'
-import { toGameMessage } from '@/shared/http'
+import { ApiError, toGameMessage } from '@/shared/http'
 
 import { type AuthApi } from './auth.api'
 
@@ -18,6 +18,21 @@ export interface AuthCommandDeps {
 
 const ACCOUNT_CREATED_LOGIN_FAILED =
   'Tu cuenta quedó creada, pero no pudimos entrar. Probá con login'
+
+const BAD_CREDENTIALS = 'Email o contraseña incorrectos'
+const ALREADY_TAKEN = 'Ese email o usuario ya está tomado'
+
+function messageFor(error: unknown, byStatus: Readonly<Record<number, string>>): string {
+  if (error instanceof ApiError && error.status !== null && error.violations === undefined) {
+    const known = byStatus[error.status]
+
+    if (known !== undefined) {
+      return known
+    }
+  }
+
+  return toGameMessage(error)
+}
 
 export function createAuthCommands({ api, session }: AuthCommandDeps): Command[] {
   async function login(email: string, password: string): Promise<TokenPair> {
@@ -43,7 +58,7 @@ export function createAuthCommands({ api, session }: AuthCommandDeps): Command[]
         try {
           await login(args.email ?? '', args.password ?? '')
         } catch (error) {
-          return { status: 'error', message: toGameMessage(error) }
+          return { status: 'error', message: messageFor(error, { 401: BAD_CREDENTIALS }) }
         }
 
         const user = await api.me()
@@ -73,7 +88,7 @@ export function createAuthCommands({ api, session }: AuthCommandDeps): Command[]
         try {
           profile = await api.register({ email, username: args.username ?? '', password })
         } catch (error) {
-          return { status: 'error', message: toGameMessage(error) }
+          return { status: 'error', message: messageFor(error, { 409: ALREADY_TAKEN }) }
         }
 
         try {
