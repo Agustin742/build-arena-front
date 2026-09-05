@@ -1,9 +1,10 @@
-import { useId } from 'react'
+import { type Ref, useId } from 'react'
 
 interface PromptProps {
   value: string
   onChange: (value: string) => void
   onSubmit: (value: string) => void
+  ref?: Ref<HTMLInputElement>
   type?: 'text' | 'password'
   hint?: string
   error?: string
@@ -15,6 +16,7 @@ export function Prompt({
   value,
   onChange,
   onSubmit,
+  ref,
   type = 'text',
   hint,
   error,
@@ -50,6 +52,7 @@ export function Prompt({
         </span>
 
         <input
+          ref={ref}
           id={inputId}
           type={type}
           value={value}
