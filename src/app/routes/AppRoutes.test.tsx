@@ -14,8 +14,16 @@ function renderAt(path: string) {
 
 describe('AppRoutes', () => {
   it.each([
-    ['/login', 'login'],
-    ['/register', 'register'],
+    ['/login', 'entrar'],
+    ['/register', 'crear cuenta'],
+  ])('mounts the auth console at %s', (path, title) => {
+    renderAt(path)
+
+    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+    expect(screen.getByText('LOGIN')).toBeInTheDocument()
+  })
+
+  it.each([
     ['/', 'lobby'],
     ['/builds', 'builds'],
     ['/builds/new', 'build wizard'],

@@ -72,7 +72,7 @@ export function createApiClient({
   tokens,
   onSessionExpired,
   refreshPath = '/auth/refresh',
-  fetchImpl = globalThis.fetch,
+  fetchImpl,
 }: ApiClientOptions): ApiClient {
   let refreshInFlight: Promise<TokenPair | null> | null = null
 
@@ -92,8 +92,10 @@ export function createApiClient({
       headers.set('Content-Type', 'application/json')
     }
 
+    const doFetch = fetchImpl ?? globalThis.fetch
+
     try {
-      return await fetchImpl(join(baseUrl, path), {
+      return await doFetch(join(baseUrl, path), {
         method,
         headers,
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),

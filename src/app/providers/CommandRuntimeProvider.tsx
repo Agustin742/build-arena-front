@@ -9,6 +9,7 @@ import {
   type Command,
   type CommandArg,
   type CommandContext,
+  type CommandResult,
   type CommandState,
   createCommandRegistry,
   deriveScopes,
@@ -23,6 +24,8 @@ import {
   SKIP_ID,
 } from '@/shared/commands'
 
+import { toGameMessage } from '@/shared/http'
+
 import { CommandRuntimeContext } from './command-runtime'
 
 interface CommandRuntimeProviderProps {
@@ -36,6 +39,7 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
 
   const [pending, setPending] = useState<PendingCommand | null>(null)
   const [promptError, setPromptError] = useState<string | undefined>(undefined)
+  const [lastResult, setLastResult] = useState<CommandResult | null>(null)
   const [generation, setGeneration] = useState(0)
 
   const activeScopes = useMemo(() => deriveScopes(state), [state])
@@ -70,8 +74,24 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
   function runCommand(command: Command, args: ParsedArgs) {
     setPending(null)
     setPromptError(undefined)
+    setLastResult(null)
     setGeneration((round) => round + 1)
-    void command.run(args, ctx)
+
+    command.run(args, ctx).then(
+      (result) => {
+        setLastResult(result)
+
+        if (result.status === 'error') {
+          setPromptError(result.message)
+        }
+      },
+      (cause: unknown) => {
+        const message = toGameMessage(cause)
+
+        setLastResult({ status: 'error', message })
+        setPromptError(message)
+      },
+    )
   }
 
   function applyOutcome(outcome: AdvanceOutcome) {
@@ -172,7 +192,16 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
 
   return (
     <CommandRuntimeContext
-      value={{ ctx, registry, pending, promptError, selectItem, submitText, cancelPending }}
+      value={{
+        ctx,
+        registry,
+        pending,
+        promptError,
+        lastResult,
+        selectItem,
+        submitText,
+        cancelPending,
+      }}
     >
       {children}
     </CommandRuntimeContext>
