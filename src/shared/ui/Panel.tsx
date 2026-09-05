@@ -16,10 +16,10 @@ export function Panel({ title, note, children, className = '' }: PanelProps) {
 
   return (
     <section aria-label={title} className={`border border-border bg-surface ${className}`}>
-      <header className="flex items-baseline justify-between gap-3 border-b border-border px-3 py-1">
+      <div className="flex items-baseline justify-between gap-3 border-b border-border px-3 py-1">
         <h2 className="text-xs font-bold tracking-widest text-accent uppercase">{title}</h2>
         {note !== undefined && <span className="text-xs text-text-dim">{note}</span>}
-      </header>
+      </div>
       {body}
     </section>
   )
