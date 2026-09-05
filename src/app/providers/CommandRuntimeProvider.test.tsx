@@ -33,8 +33,16 @@ function latestOf(seen: readonly CommandRuntime[]): CommandRuntime {
   return runtime
 }
 
-const lobbyState: CommandState = { isAuthenticated: true, battleId: null, reactionWindowOpen: false }
-const battleState: CommandState = { isAuthenticated: true, battleId: 'b1', reactionWindowOpen: false }
+const lobbyState: CommandState = {
+  isAuthenticated: true,
+  battleId: null,
+  reactionWindowOpen: false,
+}
+const battleState: CommandState = {
+  isAuthenticated: true,
+  battleId: 'b1',
+  reactionWindowOpen: false,
+}
 
 function makeResulting(result: CommandResult): Command {
   return {
@@ -53,7 +61,7 @@ async function runAlias(seen: readonly CommandRuntime[], alias: string) {
 }
 
 describe('CommandRuntimeProvider', () => {
-  it('surfaces a failed command result instead of swallowing it', async () => {
+  it('surfaces a failed command result as console output, not as a prompt error', async () => {
     const seen: CommandRuntime[] = []
     const failing = makeResulting({ status: 'error', message: 'Credenciales inválidas' })
 
@@ -69,7 +77,7 @@ describe('CommandRuntimeProvider', () => {
 
     await runAlias(seen, 'login')
 
-    expect(latestOf(seen).promptError).toBe('Credenciales inválidas')
+    expect(latestOf(seen).promptError).toBeUndefined()
     expect(latestOf(seen).lastResult).toEqual({
       status: 'error',
       message: 'Credenciales inválidas',
@@ -143,7 +151,7 @@ describe('CommandRuntimeProvider', () => {
     await runAlias(seen, 'login')
 
     expect(latestOf(seen).lastResult?.status).toBe('error')
-    expect(latestOf(seen).promptError).toBeDefined()
+    expect(latestOf(seen).promptError).toBeUndefined()
   })
 
   it('bumps the numbered list generation when the active scope changes', () => {
