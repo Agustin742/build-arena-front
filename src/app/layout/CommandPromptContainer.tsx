@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useCommandRuntime } from '@/app/providers/command-runtime'
 import { type CommandArg } from '@/shared/commands'
@@ -11,9 +11,37 @@ const CANCEL_KEYWORD = 'cancel'
 
 export function CommandPromptContainer() {
   const runtime = useCommandRuntime()
+  const inputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState('')
   const [typedAtGeneration, setTypedAtGeneration] = useState<number | undefined>(undefined)
   const [localError, setLocalError] = useState<string | undefined>(undefined)
+
+  const holdKeyboard = useCallback((node: HTMLInputElement | null) => {
+    inputRef.current = node
+    node?.focus()
+  }, [])
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) {
+        return
+      }
+
+      const active = document.activeElement
+
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      inputRef.current?.focus()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [])
 
   useEffect(() => {
     if (runtime.pending === null) {
@@ -103,6 +131,7 @@ export function CommandPromptContainer() {
   return (
     <PromptPortal>
       <Prompt
+        ref={holdKeyboard}
         value={value}
         onChange={handleChange}
         onSubmit={handleSubmit}

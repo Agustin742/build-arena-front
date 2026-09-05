@@ -40,6 +40,8 @@ describe('DesignScreen', () => {
   it('walks the whole screen with the keyboard and ends on the prompt', async () => {
     renderDesign()
 
+    screen.getByRole('textbox').blur()
+
     const reachable: string[] = []
 
     for (let step = 0; step < 40; step += 1) {

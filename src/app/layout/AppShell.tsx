@@ -20,10 +20,12 @@ export function AppShell() {
         <span className="text-xs text-text-dim">consola de duelos</span>
       </header>
 
-      <main id="console-content" className="flex-1 px-4 py-4">
-        <PromptSlotContext value={slot}>
-          <Outlet />
-        </PromptSlotContext>
+      <main id="console-content" className="flex flex-1 flex-col px-4 py-4">
+        <div className="mt-auto">
+          <PromptSlotContext value={slot}>
+            <Outlet />
+          </PromptSlotContext>
+        </div>
       </main>
 
       <footer

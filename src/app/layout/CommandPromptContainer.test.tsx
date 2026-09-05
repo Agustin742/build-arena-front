@@ -99,6 +99,45 @@ function makeLogin(run: Command['run'] = ok): Command {
 }
 
 describe('CommandPromptContainer', () => {
+  it('holds the keyboard as soon as it mounts, with no click', () => {
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge()]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
+    )
+
+    expect(screen.getByRole('textbox')).toHaveFocus()
+  })
+
+  it('takes the keyboard back when someone types with the line unfocused', async () => {
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge()]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
+    )
+
+    const input = screen.getByRole('textbox')
+    input.blur()
+    expect(input).not.toHaveFocus()
+
+    await userEvent.keyboard('c')
+
+    expect(input).toHaveFocus()
+  })
+
+  it('keeps the keyboard when the guided prompt swaps to the masked line', async () => {
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeLogin()]} state={lobbyState}>
+        <CommandPromptContainer />
+      </CommandRuntimeProvider>,
+    )
+
+    await userEvent.type(screen.getByRole('textbox'), 'login{Enter}')
+    await userEvent.type(screen.getByRole('textbox'), 'ada@arena.dev{Enter}')
+
+    expect(screen.getByLabelText('Contraseña')).toHaveFocus()
+  })
+
   it('names the argument it is waiting for so the player knows what to type', async () => {
     renderPrompt(
       <CommandRuntimeProvider commands={[makeChallenge()]} state={lobbyState}>
