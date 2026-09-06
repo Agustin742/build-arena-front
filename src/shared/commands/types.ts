@@ -4,6 +4,12 @@ export interface CommandOption {
   id: string
   label: string
   hint?: string | undefined
+  /**
+   * What the player types to choose this option. Defaults to its position in the list.
+   * A step that offers the numbers 8 to 15 sets it, so typing 14 means 14 and not the
+   * seventh row.
+   */
+  key?: string | undefined
   /** Shown struck through instead of hidden, so the player learns what unlocks it. */
   lockedReason?: string | undefined
 }
