@@ -193,6 +193,41 @@ describe('createApiClient', () => {
     expect(error.status).toBeNull()
   })
 
+  it('carries the retry window the arena asked for, in milliseconds', async () => {
+    server.use(
+      http.post(
+        `${baseUrl}/auth/login`,
+        () => new HttpResponse(null, { status: 429, headers: { 'Retry-After': '60' } }),
+      ),
+    )
+
+    const error = (await clientWith()
+      .post('/auth/login', {})
+      .catch((caught: unknown) => caught)) as ApiError
+
+    expect(error.retryAfterMs).toBe(60_000)
+  })
+
+  it('carries no retry window when the header is absent or unreadable', async () => {
+    server.use(
+      http.post(`${baseUrl}/auth/login`, () => new HttpResponse(null, { status: 429 })),
+      http.post(
+        `${baseUrl}/auth/register`,
+        () => new HttpResponse(null, { status: 429, headers: { 'Retry-After': 'tuesday' } }),
+      ),
+    )
+
+    const missing = (await clientWith()
+      .post('/auth/login', {})
+      .catch((caught: unknown) => caught)) as ApiError
+    const garbage = (await clientWith()
+      .post('/auth/register', {})
+      .catch((caught: unknown) => caught)) as ApiError
+
+    expect(missing.retryAfterMs).toBeUndefined()
+    expect(garbage.retryAfterMs).toBeUndefined()
+  })
+
   it('uses whatever global fetch is installed when the request runs, not at creation', async () => {
     const client = createApiClient({ baseUrl, tokens: tokenStoreWith('access-1') })
     const original = globalThis.fetch

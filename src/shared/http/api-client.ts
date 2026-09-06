@@ -49,6 +49,18 @@ function join(baseUrl: string, path: string) {
   return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
+function readRetryAfter(response: Response): number | undefined {
+  const header = response.headers.get('Retry-After')
+
+  if (header === null) {
+    return undefined
+  }
+
+  const seconds = Number(header)
+
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : undefined
+}
+
 async function readBody(response: Response): Promise<unknown> {
   if (response.status === 204) {
     return undefined
@@ -187,6 +199,7 @@ export function createApiClient({
       throw new ApiError(`The request to ${path} failed with ${String(response.status)}`, {
         status: response.status,
         payload,
+        retryAfterMs: readRetryAfter(response),
       })
     }
 
