@@ -61,12 +61,17 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
   const picks = useMemo<NumberedList>(() => {
     const baseCtx: CommandContext = { activeScopes, picks: EMPTY_NUMBERED_LIST, state }
 
-    return pendingArg === undefined
-      ? numberCommands(registry.visible(baseCtx), generation)
-      : numberOptions(pendingArg.options?.(baseCtx) ?? [], generation, {
-          skip: !pendingArg.required,
-        })
-  }, [activeScopes, generation, pendingArg, registry, state])
+    if (pendingArg === undefined) {
+      return numberCommands(registry.visible(baseCtx), generation)
+    }
+
+    // The options of a step are built from the answers of the steps before it.
+    const answers = pending?.values ?? {}
+
+    return numberOptions(pendingArg.options?.(baseCtx, answers) ?? [], generation, {
+      skip: !pendingArg.required,
+    })
+  }, [activeScopes, generation, pending, pendingArg, registry, state])
 
   const ctx: CommandContext = { activeScopes, picks, state }
 

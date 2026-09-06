@@ -39,6 +39,7 @@ export function numberOptions(
     id: option.id,
     label: option.label,
     ...(option.hint === undefined ? {} : { hint: option.hint }),
+    ...(option.lockedReason === undefined ? {} : { lockedReason: option.lockedReason }),
   }))
 
   if (controls.skip) {

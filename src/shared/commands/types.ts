@@ -4,6 +4,8 @@ export interface CommandOption {
   id: string
   label: string
   hint?: string | undefined
+  /** Shown struck through instead of hidden, so the player learns what unlocks it. */
+  lockedReason?: string | undefined
 }
 
 export interface CommandArg {
@@ -11,7 +13,11 @@ export interface CommandArg {
   kind: 'text' | 'password' | 'number' | 'pick'
   label: string
   required: boolean
-  options?: ((ctx: CommandContext) => CommandOption[]) | undefined
+  /**
+   * `values` carries the answers already given to this same command. A guided wizard
+   * needs them: the kit can only be filtered by the attributes the player just chose.
+   */
+  options?: ((ctx: CommandContext, values: ParsedArgs) => CommandOption[]) | undefined
 }
 
 export type ParsedArgs = Readonly<Record<string, string>>

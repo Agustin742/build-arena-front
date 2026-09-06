@@ -51,11 +51,40 @@ export function begin(command: Command, seed: ParsedArgs = {}): AdvanceOutcome {
   return continueFrom(command, seed, 0)
 }
 
+/**
+ * A locked option is still numbered and still looked up, because the prompt accepts the
+ * number even though the button is disabled. The refusal lives here so both doors close.
+ */
+function refuseLockedPick(
+  arg: CommandArg | undefined,
+  pending: PendingCommand,
+  optionId: string,
+  ctx: CommandContext,
+): AdvanceOutcome | undefined {
+  const options = arg?.options?.(ctx, pending.values)
+
+  if (options === undefined) {
+    return undefined
+  }
+
+  const option = options.find((candidate) => candidate.id === optionId)
+
+  if (option === undefined) {
+    return { kind: 'invalid', pending, reason: `${optionId} is not on offer` }
+  }
+
+  if (option.lockedReason !== undefined) {
+    return { kind: 'invalid', pending, reason: option.lockedReason }
+  }
+
+  return undefined
+}
+
 export function advance(
   command: Command,
   pending: PendingCommand,
   input: AdvanceInput,
-  _ctx: CommandContext,
+  ctx: CommandContext,
 ): AdvanceOutcome {
   if (input.kind === 'cancel') {
     return { kind: 'cancelled' }
@@ -70,6 +99,14 @@ export function advance(
     }
 
     return continueFrom(command, pending.values, currentIndex + 1)
+  }
+
+  if (input.kind === 'pick') {
+    const refusal = refuseLockedPick(arg, pending, input.optionId, ctx)
+
+    if (refusal !== undefined) {
+      return refusal
+    }
   }
 
   const raw = input.kind === 'value' ? input.raw : input.optionId
