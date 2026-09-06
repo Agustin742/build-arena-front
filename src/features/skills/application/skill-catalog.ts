@@ -25,7 +25,7 @@ export function skillCatalogQuery(api: SkillsApi) {
 }
 
 export function fetchSkillCatalog(client: QueryClient, api: SkillsApi): Promise<SkillCatalog> {
-  return client.fetchQuery(skillCatalogQuery(api))
+  return client.query(skillCatalogQuery(api))
 }
 
 /** What is already in memory, without asking for it. */
