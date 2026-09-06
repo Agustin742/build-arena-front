@@ -60,6 +60,27 @@ async function runAlias(seen: readonly CommandRuntime[], alias: string) {
   })
 }
 
+function makeWizard(): Command {
+  return {
+    ...makePing(),
+    id: 'build-new',
+    aliases: ['build new'],
+    args: [
+      { name: 'name', kind: 'text', label: 'Nombre', required: true },
+      {
+        name: 'skill',
+        kind: 'pick',
+        label: 'Habilidad',
+        required: true,
+        options: (_ctx, values) => [
+          { id: `for-${values.name ?? 'nobody'}`, label: 'POWER_STRIKE' },
+          { id: 'locked', label: 'PRECISE_SHOT', lockedReason: 'necesita DEXTERITY 13, tenes 12' },
+        ],
+      },
+    ],
+  }
+}
+
 describe('CommandRuntimeProvider', () => {
   it('surfaces a failed command result as console output, not as a prompt error', async () => {
     const seen: CommandRuntime[] = []
@@ -225,5 +246,59 @@ describe('CommandRuntimeProvider', () => {
     )
 
     expect(latestOf(seen).registry).toBe(first)
+  })
+
+  it('builds the options of a step from the answers of the steps before it', async () => {
+    const seen: CommandRuntime[] = []
+
+    render(
+      <CommandRuntimeProvider commands={[makeWizard()]} state={lobbyState}>
+        <Probe
+          onRuntime={(runtime) => {
+            seen.push(runtime)
+          }}
+        />
+      </CommandRuntimeProvider>,
+    )
+
+    await runAlias(seen, 'build new')
+    await act(async () => {
+      latestOf(seen).submitText('agil', undefined)
+      await Promise.resolve()
+    })
+
+    expect(latestOf(seen).ctx.picks.items.map((item) => item.id)).toContain('for-agil')
+  })
+
+  it('shows a locked option instead of hiding it, and refuses the pick', async () => {
+    const seen: CommandRuntime[] = []
+
+    render(
+      <CommandRuntimeProvider commands={[makeWizard()]} state={lobbyState}>
+        <Probe
+          onRuntime={(runtime) => {
+            seen.push(runtime)
+          }}
+        />
+      </CommandRuntimeProvider>,
+    )
+
+    await runAlias(seen, 'build new')
+    await act(async () => {
+      latestOf(seen).submitText('agil', undefined)
+      await Promise.resolve()
+    })
+
+    expect(latestOf(seen).ctx.picks.items).toContainEqual(
+      expect.objectContaining({ id: 'locked', lockedReason: 'necesita DEXTERITY 13, tenes 12' }),
+    )
+
+    await act(async () => {
+      latestOf(seen).selectItem('locked')
+      await Promise.resolve()
+    })
+
+    expect(latestOf(seen).promptError).toBe('necesita DEXTERITY 13, tenes 12')
+    expect(latestOf(seen).pending?.awaiting).toBe('skill')
   })
 })
