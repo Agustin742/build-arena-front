@@ -101,25 +101,48 @@ describe('attributeOptions', () => {
   it('shows what each value costs and what would be left', () => {
     const [base] = attributeOptions({}, 'strength')
 
-    expect(base?.hint).toBe('costo 0 · restan 20')
+    expect(base?.hint).toBe('mod -1 · costo 0 · restan 20')
   })
 
   it('charges the accelerated price at the top of the table', () => {
     const options = attributeOptions({}, 'strength')
 
-    expect(options.at(-2)?.hint).toBe('costo 7 · restan 13')
+    expect(options.at(-2)?.hint).toBe('mod +2 · costo 7 · restan 13')
+  })
+
+  it('shows the modifier every value buys, so the flat top of the table is visible', () => {
+    const options = attributeOptions({}, 'strength')
+
+    expect(options.map((option) => option.hint?.slice(0, 6))).toEqual([
+      'mod -1',
+      'mod -1',
+      'mod +0',
+      'mod +0',
+      'mod +1',
+      'mod +1',
+      'mod +2',
+      'mod +2',
+    ])
+  })
+
+  it('gives 14 and 15 the same modifier, which is the whole warning', () => {
+    const options = attributeOptions({}, 'strength')
+    const [fourteen, fifteen] = options.slice(-2)
+
+    expect(fourteen?.hint?.startsWith('mod +2')).toBe(true)
+    expect(fifteen?.hint?.startsWith('mod +2')).toBe(true)
   })
 
   it('discounts what the earlier attributes already spent', () => {
     const [base] = attributeOptions({ strength: '14' }, 'magic')
 
-    expect(base?.hint).toBe('costo 0 · restan 13')
+    expect(base?.hint).toBe('mod -1 · costo 0 · restan 13')
   })
 
   it('ignores what this same attribute held before, so a step can be replayed', () => {
     const [base] = attributeOptions({ strength: '15', magic: '8' }, 'strength')
 
-    expect(base?.hint).toBe('costo 0 · restan 20')
+    expect(base?.hint).toBe('mod -1 · costo 0 · restan 20')
   })
 
   it('locks a value the remaining budget cannot pay, and says by how much', () => {
