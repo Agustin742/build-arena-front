@@ -2,7 +2,7 @@
  * The domain imports nothing from the project, so it restates the few literals it shares
  * with the wire contract instead of importing them. Nothing is adapted at runtime: a
  * `PublicSkill` is structurally assignable to `SkillRules`, and if the contract ever
- * drifts, the call site stops compiling. `skill-rules.test.ts` guards that on purpose.
+ * drifts, the call site in `application/` stops compiling.
  */
 
 /** The attribute a skill demands, spelled as the catalog spells it. */
