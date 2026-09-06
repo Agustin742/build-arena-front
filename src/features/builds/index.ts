@@ -8,6 +8,7 @@ export {
   fetchBuilds,
   invalidateBuilds,
 } from './application/build-queries'
+export { type BuildCommandDeps, createBuildsCommands } from './application/builds.commands'
 export {
   ATTRIBUTE_STEP_LABEL,
   attributeOptions,
