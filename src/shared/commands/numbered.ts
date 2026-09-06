@@ -35,7 +35,7 @@ export function numberOptions(
   controls: { skip: boolean },
 ): NumberedList {
   const items: NumberedItem[] = options.map((option, index) => ({
-    key: String(index + 1),
+    key: option.key ?? String(index + 1),
     id: option.id,
     label: option.label,
     ...(option.hint === undefined ? {} : { hint: option.hint }),
