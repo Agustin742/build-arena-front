@@ -113,6 +113,50 @@ describe('createAuthCommands', () => {
       expect(session.setUser).not.toHaveBeenCalled()
     })
 
+    it('announces the throttle window so the console can lock the line', async () => {
+      const onThrottled = vi.fn()
+      const api = makeApi({
+        login: () =>
+          Promise.reject(
+            new ApiError('slow down', { status: 429, payload: undefined, retryAfterMs: 45_000 }),
+          ),
+      })
+      const commands = createAuthCommands({ api, session: makeSession(), onThrottled })
+
+      await commandNamed(commands, 'login').run(
+        { email: 'ada@arena.dev', password: 'hunter2hunter2' },
+        ctx,
+      )
+
+      expect(onThrottled).toHaveBeenCalledWith(45_000)
+    })
+
+    it('announces the throttle even when the arena did not say for how long', async () => {
+      const onThrottled = vi.fn()
+      const api = makeApi({ login: throwing(429) })
+      const commands = createAuthCommands({ api, session: makeSession(), onThrottled })
+
+      await commandNamed(commands, 'login').run(
+        { email: 'ada@arena.dev', password: 'hunter2hunter2' },
+        ctx,
+      )
+
+      expect(onThrottled).toHaveBeenCalledWith(undefined)
+    })
+
+    it('announces nothing when the failure was not a throttle', async () => {
+      const onThrottled = vi.fn()
+      const api = makeApi({ login: throwing(401) })
+      const commands = createAuthCommands({ api, session: makeSession(), onThrottled })
+
+      await commandNamed(commands, 'login').run(
+        { email: 'ada@arena.dev', password: 'wrongpassword' },
+        ctx,
+      )
+
+      expect(onThrottled).not.toHaveBeenCalled()
+    })
+
     it('surfaces the throttle as its own message', async () => {
       const api = makeApi({ login: throwing(429) })
       const commands = createAuthCommands({ api, session: makeSession() })

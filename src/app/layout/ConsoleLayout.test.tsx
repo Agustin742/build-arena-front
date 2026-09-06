@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { authCommands } from '@/app/boot/auth-commands'
-import { useSessionStore } from '@/features/auth'
+import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { server } from '@/test/msw/server'
 
 import { ConsoleLayout } from './ConsoleLayout'
@@ -38,6 +38,7 @@ function renderConsole(path = '/lobby') {
 describe('ConsoleLayout', () => {
   beforeEach(() => {
     useSessionStore.getState().clear()
+    useThrottleStore.getState().release()
   })
 
   it('keeps the console on a screen that has nothing to do with auth', () => {
@@ -49,6 +50,45 @@ describe('ConsoleLayout', () => {
     expect(screen.getByText('ME')).toBeInTheDocument()
     expect(screen.getByText('LOGOUT')).toBeInTheDocument()
     expect(screen.getByRole('textbox')).toBeInTheDocument()
+  })
+
+  it('locks the line and counts the wait down when the arena throttles the attempts', async () => {
+    server.use(
+      http.post(
+        `${baseUrl}/auth/login`,
+        () =>
+          new HttpResponse(JSON.stringify({ statusCode: 429, message: 'ThrottlerException' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+          }),
+      ),
+    )
+    renderConsole()
+
+    await userEvent.type(screen.getByRole('textbox'), 'login{Enter}')
+    await userEvent.type(screen.getByRole('textbox'), 'ada@arena.dev{Enter}')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'hunter2hunter2{Enter}')
+
+    expect(await screen.findByRole('timer')).toHaveTextContent('60s')
+    expect(screen.getByLabelText('Comando')).toBeDisabled()
+  })
+
+  it('leaves the line open when the failure was not a throttle', async () => {
+    server.use(
+      http.post(`${baseUrl}/auth/login`, () =>
+        HttpResponse.json({ statusCode: 401, message: 'Unauthorized' }, { status: 401 }),
+      ),
+    )
+    renderConsole()
+
+    await userEvent.type(screen.getByRole('textbox'), 'login{Enter}')
+    await userEvent.type(screen.getByRole('textbox'), 'ada@arena.dev{Enter}')
+    await userEvent.type(screen.getByLabelText('Contraseña'), 'wrongpassword{Enter}')
+
+    await screen.findByRole('alert')
+
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox')).not.toBeDisabled()
   })
 
   it('offers the anonymous commands and nothing that needs a session', () => {

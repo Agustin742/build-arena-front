@@ -10,12 +10,14 @@ import {
 interface ApiErrorInit {
   status: number | null
   payload: unknown
+  retryAfterMs?: number | undefined
   cause?: unknown
 }
 
 export class ApiError extends Error {
   readonly status: number | null
   readonly payload: unknown
+  readonly retryAfterMs: number | undefined
   readonly validation: ValidationError | undefined
   readonly violations: ViolationEnvelope | undefined
 
@@ -24,6 +26,7 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = init.status
     this.payload = init.payload
+    this.retryAfterMs = init.retryAfterMs
 
     const violations = violationEnvelopeSchema.safeParse(init.payload)
     this.violations = violations.success ? violations.data : undefined

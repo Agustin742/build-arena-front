@@ -99,6 +99,23 @@ function makeLogin(run: Command['run'] = ok): Command {
 }
 
 describe('CommandPromptContainer', () => {
+  it('refuses the line while it is disabled, and takes nothing back', async () => {
+    const run = vi.fn(ok)
+    renderPrompt(
+      <CommandRuntimeProvider commands={[makeChallenge(run)]} state={lobbyState}>
+        <CommandPromptContainer disabled />
+      </CommandRuntimeProvider>,
+    )
+
+    const input = screen.getByRole('textbox')
+    expect(input).toBeDisabled()
+
+    await userEvent.keyboard('challenge{Enter}')
+
+    expect(run).not.toHaveBeenCalled()
+    expect(input).not.toHaveFocus()
+  })
+
   it('holds the keyboard as soon as it mounts, with no click', () => {
     renderPrompt(
       <CommandRuntimeProvider commands={[makeChallenge()]} state={lobbyState}>
