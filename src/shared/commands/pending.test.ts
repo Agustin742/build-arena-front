@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { advance, begin } from './pending'
-import { type Command, type CommandContext, type NumberedList } from './types'
+import {
+  type Command,
+  type CommandArg,
+  type CommandContext,
+  type CommandOption,
+  type NumberedList,
+} from './types'
 
 const emptyPicks: NumberedList = { generation: 0, items: [], lookup: () => undefined }
 
@@ -151,5 +157,105 @@ describe('advance', () => {
     )
 
     expect(viaClicks).toEqual(viaSeed)
+  })
+})
+
+function makeKitCommand(options: CommandOption[]): Command {
+  return {
+    ...makeCommand(),
+    id: 'build-new',
+    aliases: ['build new'],
+    args: [
+      { name: 'name', kind: 'text', label: 'Nombre', required: true },
+      {
+        name: 'action',
+        kind: 'pick',
+        label: 'Acción',
+        required: true,
+        options: () => options,
+      },
+    ],
+  }
+}
+
+describe('advance over a pick argument', () => {
+  const open: CommandOption = { id: 'POWER_STRIKE', label: 'POWER_STRIKE' }
+  const locked: CommandOption = {
+    id: 'PRECISE_SHOT',
+    label: 'PRECISE_SHOT',
+    lockedReason: 'necesita DEXTERITY 13, tenés 12',
+  }
+
+  it('takes an option that is open', () => {
+    const command = makeKitCommand([open, locked])
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+
+    expect(
+      advance(command, pending, { kind: 'pick', optionId: 'POWER_STRIKE' }, contextFor()),
+    ).toEqual({
+      kind: 'filled',
+      command,
+      args: { name: 'ágil', action: 'POWER_STRIKE' },
+    })
+  })
+
+  it('refuses a locked option and answers with its reason', () => {
+    const command = makeKitCommand([open, locked])
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+
+    expect(
+      advance(command, pending, { kind: 'pick', optionId: 'PRECISE_SHOT' }, contextFor()),
+    ).toEqual({
+      kind: 'invalid',
+      pending,
+      reason: 'necesita DEXTERITY 13, tenés 12',
+    })
+  })
+
+  it('refuses an option the list never offered', () => {
+    const command = makeKitCommand([open])
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+
+    const outcome = advance(command, pending, { kind: 'pick', optionId: 'FIREBALL' }, contextFor())
+
+    expect(outcome).toMatchObject({ kind: 'invalid', pending })
+  })
+
+  it('hands the answers collected so far to the option builder', () => {
+    const seen = vi.fn<NonNullable<CommandArg['options']>>().mockReturnValue([open])
+    const command: Command = {
+      ...makeKitCommand([open]),
+      args: [
+        { name: 'name', kind: 'text', label: 'Nombre', required: true },
+        { name: 'action', kind: 'pick', label: 'Acción', required: true, options: seen },
+      ],
+    }
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+    const ctx = contextFor()
+
+    advance(command, pending, { kind: 'pick', optionId: 'POWER_STRIKE' }, ctx)
+
+    expect(seen).toHaveBeenCalledWith(ctx, { name: 'ágil' })
+  })
+
+  it('takes a typed value on a pick argument without consulting the options', () => {
+    const command = makeKitCommand([open])
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+
+    expect(advance(command, pending, { kind: 'value', raw: 'FIREBALL' }, contextFor())).toEqual({
+      kind: 'filled',
+      command,
+      args: { name: 'ágil', action: 'FIREBALL' },
+    })
+  })
+
+  it('takes a pick on an argument that offers no options at all', () => {
+    const command = makeCommand()
+    const pending = { commandId: 'challenge', values: {}, awaiting: 'rival' }
+
+    expect(advance(command, pending, { kind: 'pick', optionId: 'grace' }, contextFor())).toEqual({
+      kind: 'pending',
+      pending: { commandId: 'challenge', values: { rival: 'grace' }, awaiting: 'build' },
+    })
   })
 })
