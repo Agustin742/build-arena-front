@@ -9,21 +9,31 @@ import { PromptPortal } from './PromptPortal'
 const NUMERAL_PATTERN = /^\d+$/
 const CANCEL_KEYWORD = 'cancel'
 
-export function CommandPromptContainer() {
+interface CommandPromptContainerProps {
+  disabled?: boolean
+}
+
+export function CommandPromptContainer({ disabled = false }: CommandPromptContainerProps) {
   const runtime = useCommandRuntime()
   const inputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState('')
   const [typedAtGeneration, setTypedAtGeneration] = useState<number | undefined>(undefined)
   const [localError, setLocalError] = useState<string | undefined>(undefined)
 
-  const holdKeyboard = useCallback((node: HTMLInputElement | null) => {
-    inputRef.current = node
-    node?.focus()
-  }, [])
+  const holdKeyboard = useCallback(
+    (node: HTMLInputElement | null) => {
+      inputRef.current = node
+
+      if (!disabled) {
+        node?.focus()
+      }
+    },
+    [disabled],
+  )
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) {
+      if (disabled || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) {
         return
       }
 
@@ -41,7 +51,7 @@ export function CommandPromptContainer() {
     return () => {
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [])
+  }, [disabled])
 
   useEffect(() => {
     if (runtime.pending === null) {
@@ -132,6 +142,7 @@ export function CommandPromptContainer() {
     <PromptPortal>
       <Prompt
         ref={holdKeyboard}
+        disabled={disabled}
         value={value}
         onChange={handleChange}
         onSubmit={handleSubmit}

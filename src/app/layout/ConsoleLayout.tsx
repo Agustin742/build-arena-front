@@ -6,9 +6,9 @@ import { CommandPromptContainer } from '@/app/layout/CommandPromptContainer'
 import { CommandResultLine } from '@/app/layout/CommandResultLine'
 import { CommandTranscript } from '@/app/layout/CommandTranscript'
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
-import { useSessionStore } from '@/features/auth'
+import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { type Command, type CommandState } from '@/shared/commands'
-import { Panel } from '@/shared/ui'
+import { Countdown, Panel } from '@/shared/ui'
 
 import { AppShell } from './AppShell'
 
@@ -19,6 +19,10 @@ interface ConsoleLayoutProps {
 export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
   const accessToken = useSessionStore((session) => session.accessToken)
   const refreshToken = useSessionStore((session) => session.refreshToken)
+
+  const lockedUntil = useThrottleStore((throttle) => throttle.lockedUntil)
+  const release = useThrottleStore((throttle) => throttle.release)
+  const windowMs = useThrottleStore((throttle) => throttle.windowMs)
 
   const state = useMemo<CommandState>(
     () => ({
@@ -41,9 +45,13 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
 
           <CommandResultLine />
           <CommandTranscript />
+
+          {lockedUntil !== null && (
+            <Countdown key={lockedUntil} remainingMs={windowMs} onExpire={release} label="Espera" />
+          )}
         </div>
 
-        <CommandPromptContainer />
+        <CommandPromptContainer disabled={lockedUntil !== null} />
       </AppShell>
     </CommandRuntimeProvider>
   )
