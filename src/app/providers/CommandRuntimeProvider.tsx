@@ -7,7 +7,6 @@ import {
   begin,
   CANCEL_ID,
   type Command,
-  type CommandArg,
   type CommandContext,
   type CommandResult,
   type CommandState,
@@ -25,7 +24,7 @@ import {
 } from '@/shared/commands'
 import { toGameMessage } from '@/shared/http'
 
-import { CommandRuntimeContext } from './command-runtime'
+import { CommandRuntimeContext, type PendingStep } from './command-runtime'
 
 interface CommandRuntimeProviderProps {
   commands: readonly Command[]
@@ -50,13 +49,19 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
     setGeneration((round) => round + 1)
   }
 
-  const pendingArg = useMemo<CommandArg | undefined>(() => {
+  const pendingStep = useMemo<PendingStep | null>(() => {
     if (pending === null) {
-      return undefined
+      return null
     }
 
-    return registry.get(pending.commandId)?.args.find((arg) => arg.name === pending.awaiting)
+    const args = registry.get(pending.commandId)?.args ?? []
+    const index = args.findIndex((arg) => arg.name === pending.awaiting)
+    const arg = args[index]
+
+    return arg === undefined ? null : { arg, index: index + 1, total: args.length }
   }, [pending, registry])
+
+  const pendingArg = pendingStep?.arg
 
   const picks = useMemo<NumberedList>(() => {
     const baseCtx: CommandContext = { activeScopes, picks: EMPTY_NUMBERED_LIST, state }
@@ -193,6 +198,7 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
         ctx,
         registry,
         pending,
+        pendingStep,
         promptError,
         lastResult,
         selectItem,
