@@ -53,12 +53,17 @@ export function begin(command: Command, seed: ParsedArgs = {}): AdvanceOutcome {
 
 /**
  * A locked option is still numbered and still looked up, because the prompt accepts the
- * number even though the button is disabled. The refusal lives here so both doors close.
+ * number even though the button is disabled. The refusal lives here so that clicking the
+ * row, typing its number and typing its name all close the same door.
+ *
+ * The two inputs part ways on a name the list never offered. A pick comes out of the list,
+ * so one that is not in it is a mistake. A typed answer is free text, and the arena is the
+ * one that judges it: the list is a courtesy, not the authority.
  */
-function refuseLockedPick(
+function refuseLockedAnswer(
   arg: CommandArg | undefined,
   pending: PendingCommand,
-  optionId: string,
+  input: { kind: 'value' | 'pick'; answer: string },
   ctx: CommandContext,
 ): AdvanceOutcome | undefined {
   const options = arg?.options?.(ctx, pending.values)
@@ -67,10 +72,12 @@ function refuseLockedPick(
     return undefined
   }
 
-  const option = options.find((candidate) => candidate.id === optionId)
+  const option = options.find((candidate) => candidate.id === input.answer)
 
   if (option === undefined) {
-    return { kind: 'invalid', pending, reason: `${optionId} is not on offer` }
+    return input.kind === 'pick'
+      ? { kind: 'invalid', pending, reason: `${input.answer} is not on offer` }
+      : undefined
   }
 
   if (option.lockedReason !== undefined) {
@@ -101,15 +108,13 @@ export function advance(
     return continueFrom(command, pending.values, currentIndex + 1)
   }
 
-  if (input.kind === 'pick') {
-    const refusal = refuseLockedPick(arg, pending, input.optionId, ctx)
-
-    if (refusal !== undefined) {
-      return refusal
-    }
-  }
-
   const raw = input.kind === 'value' ? input.raw : input.optionId
+
+  const refusal = refuseLockedAnswer(arg, pending, { kind: input.kind, answer: raw }, ctx)
+
+  if (refusal !== undefined) {
+    return refusal
+  }
 
   if (raw === '') {
     return { kind: 'invalid', pending, reason: `${pending.awaiting} cannot be empty` }
