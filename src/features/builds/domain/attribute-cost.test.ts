@@ -81,7 +81,9 @@ describe('toAttributeSpread', () => {
   })
 
   it('returns null when any attribute falls outside the range', () => {
-    expect(toAttributeSpread({ strength: 16, magic: 8, dexterity: 12, constitution: 10 })).toBeNull()
+    expect(
+      toAttributeSpread({ strength: 16, magic: 8, dexterity: 12, constitution: 10 }),
+    ).toBeNull()
   })
 })
 
