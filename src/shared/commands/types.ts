@@ -18,9 +18,14 @@ export type ParsedArgs = Readonly<Record<string, string>>
 
 export type CommandAvailability = { enabled: true } | { enabled: false; reason: string }
 
+/**
+ * `lines` is what a list or a rejection needs: a catalog prints twelve rows, and a build
+ * the arena refuses comes back with every violation at once. The console shows them all
+ * under the headline instead of the player discovering the problems one at a time.
+ */
 export type CommandResult =
-  | { status: 'ok'; message?: string | undefined }
-  | { status: 'error'; message: string }
+  | { status: 'ok'; message?: string | undefined; lines?: readonly string[] | undefined }
+  | { status: 'error'; message: string; lines?: readonly string[] | undefined }
 
 export interface CommandState {
   isAuthenticated: boolean

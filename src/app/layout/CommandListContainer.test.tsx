@@ -7,7 +7,11 @@ import { type Command, type CommandState } from '@/shared/commands'
 
 import { CommandListContainer } from './CommandListContainer'
 
-const lobbyState: CommandState = { isAuthenticated: true, battleId: null, reactionWindowOpen: false }
+const lobbyState: CommandState = {
+  isAuthenticated: true,
+  battleId: null,
+  reactionWindowOpen: false,
+}
 
 function makeCommand(overrides: Partial<Command> = {}): Command {
   return {

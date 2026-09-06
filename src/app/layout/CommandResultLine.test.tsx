@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { CommandRuntimeContext, type CommandRuntime } from '@/app/providers/command-runtime'
+import { type CommandRuntime, CommandRuntimeContext } from '@/app/providers/command-runtime'
 import { type CommandResult, createCommandRegistry, EMPTY_NUMBERED_LIST } from '@/shared/commands'
 
 import { CommandResultLine } from './CommandResultLine'
@@ -35,8 +35,14 @@ describe('CommandResultLine', () => {
     const status = screen.getByRole('status')
 
     expect(status).toHaveTextContent('Catálogo')
-    expect(status).toHaveTextContent('1) POWER_STRIKE  4pts')
-    expect(status).toHaveTextContent('2) FIREBALL  5pts')
+    expect(screen.getByText(/POWER_STRIKE/)).toBeInTheDocument()
+    expect(screen.getByText(/FIREBALL/)).toBeInTheDocument()
+  })
+
+  it('keeps the padding that lines up the columns of a listing', () => {
+    renderResult({ status: 'ok', lines: ['1) POWER_STRIKE  4pts'] })
+
+    expect(screen.getByText(/POWER_STRIKE/).textContent).toBe('1) POWER_STRIKE  4pts')
   })
 
   it('prints the lines of a rejection, so every violation lands together', () => {
@@ -53,9 +59,9 @@ describe('CommandResultLine', () => {
   })
 
   it('prints the lines even when the result carries no headline', () => {
-    renderResult({ status: 'ok', lines: ['1) POWER_STRIKE  4pts'] })
+    renderResult({ status: 'ok', lines: ['1) POWER_STRIKE 4pts'] })
 
-    expect(screen.getByRole('status')).toHaveTextContent('1) POWER_STRIKE  4pts')
+    expect(screen.getByRole('status')).toHaveTextContent('1) POWER_STRIKE 4pts')
   })
 })
 
