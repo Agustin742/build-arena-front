@@ -89,3 +89,37 @@ describe('numberOptions', () => {
     expect(list.items).toContainEqual(expect.objectContaining({ key: 'esc', id: '__cancel__' }))
   })
 })
+
+describe('numberOptions with locked options', () => {
+  const options: CommandOption[] = [
+    { id: 'POWER_STRIKE', label: 'POWER_STRIKE', hint: '4pts' },
+    { id: 'PRECISE_SHOT', label: 'PRECISE_SHOT', lockedReason: 'necesita DEXTERITY 13, tenés 12' },
+  ]
+
+  it('numbers a locked option like any other, so the list keeps its shape', () => {
+    const list = numberOptions(options, 1, { skip: false })
+
+    expect(list.items.slice(0, 2).map((item) => item.key)).toEqual(['1', '2'])
+  })
+
+  it('carries the reason a locked option cannot be picked', () => {
+    const list = numberOptions(options, 1, { skip: false })
+
+    expect(list.items[1]).toMatchObject({
+      id: 'PRECISE_SHOT',
+      lockedReason: 'necesita DEXTERITY 13, tenés 12',
+    })
+  })
+
+  it('leaves an open option without a reason', () => {
+    const list = numberOptions(options, 1, { skip: false })
+
+    expect(list.items[0]).not.toHaveProperty('lockedReason')
+  })
+
+  it('still resolves a locked option by its key, so the refusal can name it', () => {
+    const list = numberOptions(options, 1, { skip: false })
+
+    expect(list.lookup('2')).toBe('PRECISE_SHOT')
+  })
+})
