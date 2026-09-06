@@ -144,7 +144,11 @@ describe('numberOptions with keys of their own', () => {
   })
 
   it('still numbers by position the options that bring no key', () => {
-    const list = numberOptions([{ id: 'a', label: 'A' }, attributes[1]!], 1, { skip: false })
+    const mixed: CommandOption[] = [
+      { id: 'a', label: 'A' },
+      { id: '14', key: '14', label: '14' },
+    ]
+    const list = numberOptions(mixed, 1, { skip: false })
 
     expect(list.items.slice(0, 2).map((item) => item.key)).toEqual(['1', '14'])
   })
