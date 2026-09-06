@@ -2,9 +2,10 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { authCommands } from '@/app/boot/auth-commands'
+import { gameCommands } from '@/app/boot/game-commands'
+import { queryClient } from '@/app/boot/query-client'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { server } from '@/test/msw/server'
 
@@ -22,11 +23,38 @@ const profile = {
 
 const pair = { accessToken: 'access-1', refreshToken: 'refresh-1' }
 
+const catalog = [
+  {
+    code: 'POWER_STRIKE',
+    name: 'Golpe potente',
+    description: 'Un mandoble que abre la guardia',
+    type: 'ACTION',
+    cost: 4,
+    requiredAttribute: 'STRENGTH',
+    requiredValue: 12,
+    damageDice: '1d8',
+    appliesCondition: null,
+    conditionRounds: null,
+  },
+  {
+    code: 'BRACE',
+    name: 'Aguantar',
+    description: 'Planta los pies y encaja',
+    type: 'REACTION',
+    cost: 3,
+    requiredAttribute: 'CONSTITUTION',
+    requiredValue: 12,
+    damageDice: null,
+    appliesCondition: null,
+    conditionRounds: null,
+  },
+]
+
 function renderConsole(path = '/lobby') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route element={<ConsoleLayout commands={authCommands} />}>
+        <Route element={<ConsoleLayout commands={gameCommands} />}>
           <Route path="/lobby" element={<p>the lobby screen</p>} />
           <Route path="/builds" element={<p>the builds screen</p>} />
         </Route>
@@ -39,6 +67,7 @@ describe('ConsoleLayout', () => {
   beforeEach(() => {
     useSessionStore.getState().clear()
     useThrottleStore.getState().release()
+    queryClient.clear()
   })
 
   it('keeps the console on a screen that has nothing to do with auth', () => {
@@ -155,5 +184,42 @@ describe('ConsoleLayout', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/email o contraseña incorrectos/i)
     expect(useSessionStore.getState().accessToken).toBeNull()
+  })
+  it('prints the catalog split by type when the player asks for the skills', async () => {
+    useSessionStore.getState().setTokens(pair)
+    server.use(http.get(`${baseUrl}/skills`, () => HttpResponse.json(catalog)))
+    renderConsole()
+
+    await userEvent.type(screen.getByRole('textbox'), 'skills{Enter}')
+
+    expect(await screen.findByText(/POWER_STRIKE/)).toBeInTheDocument()
+    expect(screen.getByText('ACCIONES')).toBeInTheDocument()
+    expect(screen.getByText('REACCIONES')).toBeInTheDocument()
+    expect(screen.getByText(/BRACE/)).toBeInTheDocument()
+  })
+
+  it('asks the arena for the catalog once, however many times it is listed', async () => {
+    const asked = vi.fn()
+    useSessionStore.getState().setTokens(pair)
+    server.use(
+      http.get(`${baseUrl}/skills`, () => {
+        asked()
+        return HttpResponse.json(catalog)
+      }),
+    )
+    renderConsole()
+
+    await userEvent.type(screen.getByRole('textbox'), 'skills{Enter}')
+    await screen.findByText(/POWER_STRIKE/)
+    await userEvent.type(screen.getByRole('textbox'), 'skills{Enter}')
+    await screen.findByText(/POWER_STRIKE/)
+
+    expect(asked).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the catalog out of reach of a player with no session', () => {
+    renderConsole()
+
+    expect(screen.queryByText('SKILLS')).not.toBeInTheDocument()
   })
 })

@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router'
 
-import { authCommands } from '@/app/boot/auth-commands'
+import { gameCommands } from '@/app/boot/game-commands'
 import { AppShell } from '@/app/layout/AppShell'
 import { ConsoleLayout } from '@/app/layout/ConsoleLayout'
 import { DesignScreen } from '@/app/routes/DesignScreen'
@@ -22,7 +22,7 @@ const PROTECTED_SCREENS = [
 export function AppRoutes() {
   return (
     <Routes>
-      <Route element={<ConsoleLayout commands={authCommands} />}>
+      <Route element={<ConsoleLayout commands={gameCommands} />}>
         <Route path="/login" element={<GuestOnly>{null}</GuestOnly>} />
         <Route path="/register" element={<GuestOnly>{null}</GuestOnly>} />
 

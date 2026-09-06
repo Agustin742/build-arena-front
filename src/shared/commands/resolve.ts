@@ -43,10 +43,7 @@ interface AliasMatch {
   rest: string
 }
 
-function findAliasMatch(
-  input: string,
-  visible: readonly VisibleCommand[],
-): AliasMatch | undefined {
+function findAliasMatch(input: string, visible: readonly VisibleCommand[]): AliasMatch | undefined {
   let best: AliasMatch | undefined
 
   for (const entry of visible) {
