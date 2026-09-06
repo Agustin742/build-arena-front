@@ -5,8 +5,8 @@ import { type BuildList } from '@/shared/contracts'
 
 import { type BuildsApi } from '../infrastructure/builds.api'
 import {
-  BUILDS_QUERY_KEY,
   buildQueryKey,
+  BUILDS_QUERY_KEY,
   cachedBuilds,
   fetchBuilds,
   invalidateBuilds,
@@ -119,5 +119,5 @@ function harness() {
   const list = vi.fn<BuildsApi['list']>().mockResolvedValue(BUILDS)
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
-  return { client, api: { list } as BuildsApi, list }
+  return { client, api: { list }, list }
 }
