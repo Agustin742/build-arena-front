@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { Outlet } from 'react-router'
 
 import { PromptSlotContext } from './prompt-slot'
 
-export function AppShell() {
+interface AppShellProps {
+  children?: ReactNode
+}
+
+export function AppShell({ children }: AppShellProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null)
 
   return (
@@ -22,9 +26,7 @@ export function AppShell() {
 
       <main id="console-content" className="flex flex-1 flex-col px-4 py-4">
         <div className="mt-auto">
-          <PromptSlotContext value={slot}>
-            <Outlet />
-          </PromptSlotContext>
+          <PromptSlotContext value={slot}>{children ?? <Outlet />}</PromptSlotContext>
         </div>
       </main>
 

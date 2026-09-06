@@ -1,23 +1,24 @@
 import { useMemo } from 'react'
+import { Outlet } from 'react-router'
 
 import { CommandListContainer } from '@/app/layout/CommandListContainer'
 import { CommandPromptContainer } from '@/app/layout/CommandPromptContainer'
 import { CommandResultLine } from '@/app/layout/CommandResultLine'
 import { CommandTranscript } from '@/app/layout/CommandTranscript'
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
+import { useSessionStore } from '@/features/auth'
 import { type Command, type CommandState } from '@/shared/commands'
 import { Panel } from '@/shared/ui'
 
-import { useSessionStore } from '../application/session.store'
+import { AppShell } from './AppShell'
 
-interface AuthConsoleProps {
-  title: string
+interface ConsoleLayoutProps {
   commands: readonly Command[]
 }
 
-export function AuthConsole({ title, commands }: AuthConsoleProps) {
-  const accessToken = useSessionStore((state) => state.accessToken)
-  const refreshToken = useSessionStore((state) => state.refreshToken)
+export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
+  const accessToken = useSessionStore((session) => session.accessToken)
+  const refreshToken = useSessionStore((session) => session.refreshToken)
 
   const state = useMemo<CommandState>(
     () => ({
@@ -30,16 +31,20 @@ export function AuthConsole({ title, commands }: AuthConsoleProps) {
 
   return (
     <CommandRuntimeProvider commands={commands} state={state}>
-      <div className="mx-auto flex max-w-2xl flex-col gap-4">
-        <Panel title={title} note="escribí el comando o su número">
-          <CommandListContainer />
-        </Panel>
+      <AppShell>
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+          <Outlet />
 
-        <CommandResultLine />
-        <CommandTranscript />
-      </div>
+          <Panel title="comandos" note="escribí el comando o su número">
+            <CommandListContainer />
+          </Panel>
 
-      <CommandPromptContainer />
+          <CommandResultLine />
+          <CommandTranscript />
+        </div>
+
+        <CommandPromptContainer />
+      </AppShell>
     </CommandRuntimeProvider>
   )
 }

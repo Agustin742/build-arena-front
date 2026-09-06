@@ -4,6 +4,19 @@ import { describe, expect, it } from 'vitest'
 import { Panel } from './Panel'
 
 describe('Panel', () => {
+  it('claims no landmark of its own, so it never competes with the page banner', () => {
+    render(
+      <>
+        <header>the page banner</header>
+        <Panel title="comandos" note="una nota">
+          <p>contenido</p>
+        </Panel>
+      </>,
+    )
+
+    expect(screen.getByRole('banner')).toHaveTextContent('the page banner')
+  })
+
   it('renders what it is given', () => {
     render(<Panel title="builds">Iron Vanguard</Panel>)
 

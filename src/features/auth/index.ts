@@ -11,4 +11,3 @@ export {
 } from './application/auth.commands'
 export { SESSION_STORAGE_KEY, sessionTokens, useSessionStore } from './application/session.store'
 export { useSessionBootstrap } from './application/use-session-bootstrap'
-export { AuthConsole } from './ui/AuthConsole'

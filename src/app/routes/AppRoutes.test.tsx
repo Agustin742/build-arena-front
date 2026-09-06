@@ -21,14 +21,11 @@ describe('AppRoutes', () => {
     useSessionStore.getState().clear()
   })
 
-  it.each([
-    ['/login', 'entrar'],
-    ['/register', 'crear cuenta'],
-  ])('mounts the auth console at %s', (path, title) => {
+  it.each([['/login'], ['/register']])('offers the way in at %s', (path) => {
     renderAt(path)
 
-    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     expect(screen.getByText('LOGIN')).toBeInTheDocument()
+    expect(screen.getByText('REGISTER')).toBeInTheDocument()
   })
 
   it.each([
@@ -49,24 +46,44 @@ describe('AppRoutes', () => {
   })
 
   it.each([
-    ['/'],
-    ['/builds'],
-    ['/builds/new'],
-    ['/builds/42'],
-    ['/friends'],
-    ['/battles'],
-    ['/battles/42'],
-    ['/leaderboard'],
-  ])('sends an anonymous visitor from %s to the login console', (path) => {
+    ['/', 'lobby'],
+    ['/builds', 'builds'],
+    ['/builds/new', 'build wizard'],
+    ['/builds/42', 'build detail'],
+    ['/friends', 'friends'],
+    ['/battles', 'battles'],
+    ['/battles/42', 'arena'],
+    ['/leaderboard', 'leaderboard'],
+  ])('sends an anonymous visitor from %s to the way in', (path, screenName) => {
     renderAt(path)
 
-    expect(screen.getByRole('heading', { name: 'entrar' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: screenName })).not.toBeInTheDocument()
+    expect(screen.getByText('LOGIN')).toBeInTheDocument()
+  })
+
+  it('keeps the console on every screen behind the session', () => {
+    useSessionStore.getState().setTokens(pair)
+
+    renderAt('/leaderboard')
+
+    expect(screen.getByRole('heading', { name: 'leaderboard' })).toBeInTheDocument()
+    expect(screen.getByText('LOGOUT')).toBeInTheDocument()
+    expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
 
   it('renders a not found screen for an unknown deep route', () => {
+    useSessionStore.getState().setTokens(pair)
+
     renderAt('/battles/42/does-not-exist')
 
     expect(screen.getByRole('heading', { name: 'not found' })).toBeInTheDocument()
+  })
+
+  it('leaves the design screen outside the console, with its own runtime', () => {
+    renderAt('/design')
+
+    expect(screen.getByRole('heading', { name: 'Panel' })).toBeInTheDocument()
+    expect(screen.queryByText('LOGIN')).not.toBeInTheDocument()
   })
 
   it('keeps the app shell around every screen', () => {

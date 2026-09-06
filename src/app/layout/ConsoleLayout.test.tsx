@@ -1,15 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
-import { type ReactNode, useState } from 'react'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { authCommands } from '@/app/boot/auth-commands'
-import { PromptSlotContext } from '@/app/layout/prompt-slot'
+import { useSessionStore } from '@/features/auth'
 import { server } from '@/test/msw/server'
 
-import { useSessionStore } from '../application/session.store'
-import { AuthConsole } from './AuthConsole'
+import { ConsoleLayout } from './ConsoleLayout'
 
 const baseUrl = 'https://api.test'
 
@@ -23,26 +22,33 @@ const profile = {
 
 const pair = { accessToken: 'access-1', refreshToken: 'refresh-1' }
 
-function PromptSlotHarness({ children }: { children: ReactNode }) {
-  const [slot, setSlot] = useState<HTMLElement | null>(null)
-
-  return (
-    <>
-      <div ref={setSlot} />
-      <PromptSlotContext value={slot}>{children}</PromptSlotContext>
-    </>
+function renderConsole(path = '/lobby') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route element={<ConsoleLayout commands={authCommands} />}>
+          <Route path="/lobby" element={<p>the lobby screen</p>} />
+          <Route path="/builds" element={<p>the builds screen</p>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
   )
 }
 
-function renderConsole() {
-  return render(<AuthConsole title="acceso" commands={authCommands} />, {
-    wrapper: PromptSlotHarness,
-  })
-}
-
-describe('AuthConsole', () => {
+describe('ConsoleLayout', () => {
   beforeEach(() => {
     useSessionStore.getState().clear()
+  })
+
+  it('keeps the console on a screen that has nothing to do with auth', () => {
+    useSessionStore.getState().setTokens(pair)
+
+    renderConsole('/builds')
+
+    expect(screen.getByText('the builds screen')).toBeInTheDocument()
+    expect(screen.getByText('ME')).toBeInTheDocument()
+    expect(screen.getByText('LOGOUT')).toBeInTheDocument()
+    expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
 
   it('offers the anonymous commands and nothing that needs a session', () => {
@@ -51,6 +57,16 @@ describe('AuthConsole', () => {
     expect(screen.getByText('LOGIN')).toBeInTheDocument()
     expect(screen.getByText('REGISTER')).toBeInTheDocument()
     expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument()
+  })
+
+  it('swaps to the session commands once the player is inside', () => {
+    useSessionStore.getState().setTokens(pair)
+
+    renderConsole()
+
+    expect(screen.getByText('LOGOUT')).toBeInTheDocument()
+    expect(screen.getByText('ME')).toBeInTheDocument()
+    expect(screen.queryByText('LOGIN')).not.toBeInTheDocument()
   })
 
   it('walks a login through the guided prompt and lands the session', async () => {
@@ -85,7 +101,7 @@ describe('AuthConsole', () => {
     expect(useSessionStore.getState().accessToken).toBe('access-1')
   })
 
-  it('reports wrong credentials on the prompt and keeps the session empty', async () => {
+  it('reports wrong credentials and keeps the session empty', async () => {
     server.use(
       http.post(`${baseUrl}/auth/login`, () =>
         HttpResponse.json({ statusCode: 401, message: 'Unauthorized' }, { status: 401 }),
@@ -99,15 +115,5 @@ describe('AuthConsole', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/email o contraseña incorrectos/i)
     expect(useSessionStore.getState().accessToken).toBeNull()
-  })
-
-  it('swaps to the session commands once the player is inside', () => {
-    useSessionStore.getState().setTokens(pair)
-
-    renderConsole()
-
-    expect(screen.getByText('LOGOUT')).toBeInTheDocument()
-    expect(screen.getByText('ME')).toBeInTheDocument()
-    expect(screen.queryByText('LOGIN')).not.toBeInTheDocument()
   })
 })
