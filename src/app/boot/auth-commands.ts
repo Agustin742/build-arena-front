@@ -3,6 +3,7 @@ import {
   createAuthApi,
   createAuthCommands,
   useSessionStore,
+  useThrottleStore,
 } from '@/features/auth'
 import { type Command } from '@/shared/commands'
 
@@ -24,4 +25,7 @@ const session: AuthSession = {
 export const authCommands: readonly Command[] = createAuthCommands({
   api: createAuthApi(apiClient),
   session,
+  onThrottled: (retryAfterMs) => {
+    useThrottleStore.getState().lock(retryAfterMs)
+  },
 })

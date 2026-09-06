@@ -14,7 +14,10 @@ export interface AuthSession {
 export interface AuthCommandDeps {
   api: AuthApi
   session: AuthSession
+  onThrottled?: ((retryAfterMs: number | undefined) => void) | undefined
 }
+
+const TOO_MANY_REQUESTS = 429
 
 const ACCOUNT_CREATED_LOGIN_FAILED =
   'Tu cuenta quedó creada, pero no pudimos entrar. Probá con login'
@@ -34,7 +37,13 @@ function messageFor(error: unknown, byStatus: Readonly<Record<number, string>>):
   return toGameMessage(error)
 }
 
-export function createAuthCommands({ api, session }: AuthCommandDeps): Command[] {
+export function createAuthCommands({ api, session, onThrottled }: AuthCommandDeps): Command[] {
+  function announceThrottle(error: unknown): void {
+    if (error instanceof ApiError && error.status === TOO_MANY_REQUESTS) {
+      onThrottled?.(error.retryAfterMs)
+    }
+  }
+
   async function login(email: string, password: string): Promise<TokenPair> {
     const pair = await api.login({ email, password })
     session.setTokens(pair)
@@ -58,6 +67,8 @@ export function createAuthCommands({ api, session }: AuthCommandDeps): Command[]
         try {
           await login(args.email ?? '', args.password ?? '')
         } catch (error) {
+          announceThrottle(error)
+
           return { status: 'error', message: messageFor(error, { 401: BAD_CREDENTIALS }) }
         }
 
@@ -88,6 +99,8 @@ export function createAuthCommands({ api, session }: AuthCommandDeps): Command[]
         try {
           profile = await api.register({ email, username: args.username ?? '', password })
         } catch (error) {
+          announceThrottle(error)
+
           return { status: 'error', message: messageFor(error, { 409: ALREADY_TAKEN }) }
         }
 
