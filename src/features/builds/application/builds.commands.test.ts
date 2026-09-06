@@ -114,7 +114,7 @@ describe('createBuildsCommands', () => {
     it('offers every value with what it costs and what would be left', () => {
       const options = optionsOf('strength', {})
 
-      expect(options[0]).toMatchObject({ id: '8', key: '8', hint: 'costo 0 · restan 20' })
+      expect(options[0]).toMatchObject({ id: '8', key: '8', hint: 'mod -1 · costo 0 · restan 20' })
     })
 
     it('locks a value the budget can no longer pay', () => {

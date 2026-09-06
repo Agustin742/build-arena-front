@@ -7,6 +7,7 @@ import {
   ATTRIBUTE_MAX,
   attributeCost,
   isAttributeValue,
+  modifier,
   toAttributeSpread,
 } from '../domain/attribute-cost'
 import { lockFor } from '../domain/kit'
@@ -66,6 +67,10 @@ function spentOnOthers(values: ParsedArgs, answering: AttributeKey): number {
   }, 0)
 }
 
+function signed(value: number): string {
+  return value < 0 ? String(value) : `+${String(value)}`
+}
+
 function missingPoints(short: number): string {
   return short === 1 ? 'te faltan 1 punto' : `te faltan ${String(short)} puntos`
 }
@@ -87,7 +92,9 @@ export function attributeOptions(values: ParsedArgs, answering: AttributeKey): C
       id: label,
       key: label,
       label,
-      hint: `costo ${String(cost)} · restan ${String(Math.max(remaining, 0))}`,
+      // The modifier comes first because it is what the point actually buys. Reading the
+      // column top to bottom shows 14 and 15 sharing a +2, which is the whole warning.
+      hint: `mod ${signed(modifier(value))} · costo ${String(cost)} · restan ${String(Math.max(remaining, 0))}`,
       ...(remaining < 0 ? { lockedReason: missingPoints(-remaining) } : {}),
     }
   })
