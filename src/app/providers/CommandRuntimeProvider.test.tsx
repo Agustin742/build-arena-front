@@ -335,7 +335,7 @@ describe('CommandRuntimeProvider', () => {
     expect(latestOf(seen).pendingStep).toMatchObject({
       index: 1,
       total: 2,
-      arg: expect.objectContaining({ name: 'name', label: 'Nombre' }),
+      arg: { name: 'name', kind: 'text', label: 'Nombre', required: true },
     })
   })
 
@@ -358,10 +358,13 @@ describe('CommandRuntimeProvider', () => {
       await Promise.resolve()
     })
 
-    expect(latestOf(seen).pendingStep).toMatchObject({
+    const step = latestOf(seen).pendingStep
+
+    expect({ index: step?.index, total: step?.total, name: step?.arg.name }).toEqual({
       index: 2,
       total: 2,
-      arg: expect.objectContaining({ name: 'skill', label: 'Habilidad' }),
+      name: 'skill',
     })
+    expect(step?.arg.label).toBe('Habilidad')
   })
 })

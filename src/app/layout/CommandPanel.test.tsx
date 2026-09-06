@@ -31,10 +31,11 @@ describe('CommandPanel', () => {
     expect(screen.getByText(/paso 2 de 10/)).toBeInTheDocument()
   })
 
-  it('labels the section by the question, for anyone reading it out loud', () => {
+  it('names the region apart from the input that asks the very same question', () => {
     renderPanel(step('Acción 1', 6, 10))
 
-    expect(screen.getByRole('region', { name: 'Acción 1' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Opciones: Acción 1' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Acción 1' })).not.toBeInTheDocument()
   })
 
   it('tells the player a step can be dropped when it is optional', () => {
