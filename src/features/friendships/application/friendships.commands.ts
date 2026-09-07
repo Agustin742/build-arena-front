@@ -3,11 +3,13 @@ import { type QueryClient } from '@tanstack/react-query'
 import {
   available,
   type Command,
+  type CommandOption,
   type CommandResult,
   type MenuControl,
   type ParsedArgs,
 } from '@/shared/commands'
 import { type PublicFriendship, type PublicPlayer } from '@/shared/contracts'
+import { resolvePlayerAnswer } from '@/shared/game-text'
 import { ApiError, toGameMessage, toViolationMessages } from '@/shared/http'
 
 import { removalOf } from '../domain/relation'
@@ -83,6 +85,14 @@ export function createFriendshipsCommands({
     return findFriendship(ordered(), values.friendship ?? '')
   }
 
+  /** The rows the add step draws, so the answer is resolved against what was on screen. */
+  function offeredPlayers(): CommandOption[] {
+    return candidateOptions(rivals.cached(), {
+      friendships: ordered(),
+      selfId: self?.() ?? null,
+    })
+  }
+
   const chooseRow = {
     name: 'friendship',
     kind: 'pick' as const,
@@ -147,21 +157,25 @@ export function createFriendshipsCommands({
           // legal answer, and the arena is the one that judges it.
           prompt: 'Elegí a alguien del ranking, o pegá su id si te lo pasaron',
           required: true,
-          options: () =>
-            candidateOptions(rivals.cached(), {
-              friendships: ordered(),
-              selfId: self?.() ?? null,
-            }),
+          options: () => offeredPlayers(),
         },
       ],
       scope: ['friends'],
       availability: available,
       run: async (values): Promise<CommandResult> => {
-        const target = values.player ?? ''
-        const named = rivals.cached().find((player) => player.id === target)
+        // Clicking a row hands over the id, but typing hands over whatever was in the
+        // prompt — a number, a username, or an id somebody passed along. Sending that raw
+        // would earn a validation error naming a field the player never saw.
+        const answer = resolvePlayerAnswer(offeredPlayers(), values.player ?? '')
+
+        if ('refusal' in answer) {
+          return { status: 'error', ...answer.refusal }
+        }
+
+        const named = rivals.cached().find((player) => player.id === answer.id)
 
         try {
-          await api.request(target)
+          await api.request(answer.id)
         } catch (error) {
           return refusalOf(error, { 404: 'Ese jugador no existe' })
         }

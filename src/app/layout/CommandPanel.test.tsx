@@ -109,6 +109,21 @@ describe('CommandPanel', () => {
 
     expect(screen.getByText(/esc para cancelar/)).toBeInTheDocument()
   })
+
+  it('takes the leftover height while it is the one asking, and scrolls inside it', () => {
+    renderPanel(step({ label: 'A quién' }))
+
+    expect(screen.getByRole('region', { name: 'Opciones: A quién' })).toHaveClass('flex-1')
+  })
+
+  it('holds still while the console is between questions, so the output can breathe', () => {
+    renderPanel(null)
+
+    const region = screen.getByRole('region', { name: 'comandos' })
+
+    expect(region).toHaveClass('shrink-0')
+    expect(region).not.toHaveClass('flex-1')
+  })
 })
 
 function step(

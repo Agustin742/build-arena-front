@@ -128,7 +128,17 @@ export function createAuthCommands({ api, session, onThrottled }: AuthCommandDep
           const user = await api.me()
           session.setUser(user)
 
-          return { status: 'ok', message: `${user.username} · rating ${String(user.rating)}` }
+          return {
+            status: 'ok',
+            message: `${user.username} · rating ${String(user.rating)}`,
+            // The arena publishes no user search, so an id shared by hand is the only way
+            // somebody outside the ranking can ever add this player. It lives here because
+            // this is the one screen that is unmistakably about them.
+            lines: [
+              `tu id: ${user.id}`,
+              'Pasáselo a quien quieras que te agregue: la arena no tiene buscador de usuarios',
+            ],
+          }
         } catch (error) {
           return { status: 'error', message: toGameMessage(error) }
         }

@@ -12,11 +12,13 @@ import {
   blocked,
   type Command,
   type CommandAvailability,
+  type CommandOption,
   type CommandResult,
   type MenuControl,
   type ParsedArgs,
 } from '@/shared/commands'
 import { type BuildList, type PublicBattle, type PublicPlayer } from '@/shared/contracts'
+import { resolvePlayerAnswer } from '@/shared/game-text'
 import { ApiError, toGameMessage, toViolationMessages } from '@/shared/http'
 
 import { type BattlesApi } from '../infrastructure/battles.api'
@@ -93,6 +95,11 @@ export function createBattlesCommands({
 
   function pick(values: ParsedArgs): PublicBattle | undefined {
     return findBattle(ordered(), values.battle ?? '')
+  }
+
+  /** The rows the rival step draws, so the answer is resolved against what was on screen. */
+  function offeredRivals(): CommandOption[] {
+    return rivalOptions(rivals.cached(), self?.() ?? null)
   }
 
   const chooseBuild = {
@@ -196,7 +203,7 @@ export function createBattlesCommands({
           // legal answer, and the arena is the one that judges it.
           prompt: 'Elegí a quién desafiar, o pegá su id si te lo pasaron',
           required: true,
-          options: () => rivalOptions(rivals.cached(), self?.() ?? null),
+          options: () => offeredRivals(),
         },
         chooseBuild,
       ],
@@ -212,12 +219,20 @@ export function createBattlesCommands({
           return { status: 'error', message: NO_BUILD }
         }
 
-        const rival = values.rival ?? ''
-        const named = rivals.cached().find((player) => player.id === rival)
+        // Clicking a row hands over the id, but typing hands over whatever was in the
+        // prompt — a number, a username, or an id somebody passed along. Sending that raw
+        // would earn a validation error naming a field the player never saw.
+        const answer = resolvePlayerAnswer(offeredRivals(), values.rival ?? '')
+
+        if ('refusal' in answer) {
+          return { status: 'error', ...answer.refusal }
+        }
+
+        const named = rivals.cached().find((player) => player.id === answer.id)
         let created
 
         try {
-          created = await api.challenge(rival, build.id)
+          created = await api.challenge(answer.id, build.id)
         } catch (error) {
           return refusalOf(error, { 404: 'Ese jugador no existe, o esa build no es tuya' })
         }

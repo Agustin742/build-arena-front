@@ -1,4 +1,5 @@
 export * from './availability'
+export * from './find-option'
 export * from './numbered'
 export * from './pending'
 export * from './registry'

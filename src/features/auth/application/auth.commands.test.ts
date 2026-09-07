@@ -297,5 +297,16 @@ describe('createAuthCommands', () => {
       expect(session.setUser).toHaveBeenCalledWith(profile)
       expect(result.status === 'ok' && result.message).toContain('ada')
     })
+
+    it('hands over the id, because nobody can look the player up by name', async () => {
+      const commands = createAuthCommands({ api: makeApi(), session: makeSession() })
+
+      const result = await commandNamed(commands, 'me').run({}, ctx)
+
+      expect(result.lines).toEqual([
+        `tu id: ${profile.id}`,
+        'Pasáselo a quien quieras que te agregue: la arena no tiene buscador de usuarios',
+      ])
+    })
   })
 })

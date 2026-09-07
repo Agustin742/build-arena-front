@@ -144,6 +144,51 @@ describe('friend add', () => {
     expect(from.api.request).toHaveBeenCalledWith('turing-id')
   })
 
+  it('takes the number the list showed instead of sending it as an id', async () => {
+    const from = deps()
+    await openMenu(from)
+
+    await commandOf(from, 'friend-add').run({ player: '1' }, ctx)
+
+    expect(from.api.request).toHaveBeenCalledWith('turing-id')
+  })
+
+  it('takes the username, whatever case it was typed in', async () => {
+    const from = deps()
+    await openMenu(from)
+
+    await commandOf(from, 'friend-add').run({ player: 'TURING' }, ctx)
+
+    expect(from.api.request).toHaveBeenCalledWith('turing-id')
+  })
+
+  it('lets an id pasted by hand through, for somebody outside every list', async () => {
+    const from = deps()
+    await openMenu(from)
+    const pasted = '9f8e7d6c-5b4a-4392-8180-7f6e5d4c3b2a'
+
+    await commandOf(from, 'friend-add').run({ player: pasted }, ctx)
+
+    expect(from.api.request).toHaveBeenCalledWith(pasted)
+  })
+
+  it('explains a name it cannot resolve instead of bouncing off a validation error', async () => {
+    const from = deps()
+    await openMenu(from)
+
+    await expect(
+      commandOf(from, 'friend-add').run({ player: 'hopper' }, ctx),
+    ).resolves.toMatchObject({
+      status: 'error',
+      message: 'No encontré a nadie que se llame "hopper"',
+      lines: [
+        'La arena no tiene buscador: elegí de la lista, o pegá el id que te hayan pasado',
+        'Cada uno consigue el suyo con el comando me',
+      ],
+    })
+    expect(from.api.request).not.toHaveBeenCalled()
+  })
+
   it('names the player it just wrote to', async () => {
     const from = deps()
     await openMenu(from)

@@ -165,6 +165,37 @@ describe('challenge', () => {
     expect(from.api.challenge).toHaveBeenCalledWith('grace-id', 'build-1')
   })
 
+  it('takes the number the list showed instead of sending it as an id', async () => {
+    const from = deps()
+    await openMenu(from)
+
+    await commandOf(from, 'challenge').run({ rival: '1', build: '1' }, ctx)
+
+    expect(from.api.challenge).toHaveBeenCalledWith('grace-id', 'build-1')
+  })
+
+  it('takes the username, whatever case it was typed in', async () => {
+    const from = deps()
+    await openMenu(from)
+
+    await commandOf(from, 'challenge').run({ rival: 'GRACE', build: '1' }, ctx)
+
+    expect(from.api.challenge).toHaveBeenCalledWith('grace-id', 'build-1')
+  })
+
+  it('explains a name it cannot resolve instead of bouncing off a validation error', async () => {
+    const from = deps()
+    await openMenu(from)
+
+    await expect(
+      commandOf(from, 'challenge').run({ rival: 'hopper', build: '1' }, ctx),
+    ).resolves.toMatchObject({
+      status: 'error',
+      message: 'No encontré a nadie que se llame "hopper"',
+    })
+    expect(from.api.challenge).not.toHaveBeenCalled()
+  })
+
   it('names who was challenged', async () => {
     const from = deps()
     await openMenu(from)

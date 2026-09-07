@@ -51,8 +51,10 @@ export function CommandPanel() {
     // "comandos" gives the player no way to tell they stepped into anything.
     const menu = ctx.state.menu
 
+    // Between questions the output is what the player came to read, so this box holds
+    // still and lets it have the room. A menu is a handful of commands; it fits.
     return (
-      <Panel title={menu ?? COMMANDS_TITLE} note={COMMANDS_NOTE}>
+      <Panel title={menu ?? COMMANDS_TITLE} note={COMMANDS_NOTE} scroll>
         <CommandListContainer />
       </Panel>
     )
@@ -65,13 +67,14 @@ export function CommandPanel() {
       title={pendingStep.arg.label}
       label={`Opciones: ${pendingStep.arg.label}`}
       note={noteFor(pendingStep)}
+      // The sentence goes in the lead, not in the body: a list of a hundred names has to
+      // scroll, and a question that scrolls out of sight is a question nobody can answer.
+      {...(sentence === undefined ? {} : { lead: <LogLine tone="dim">{sentence}</LogLine> })}
+      scroll
+      // While the console is asking, this is the box the player is working in, so it takes
+      // the leftover height. Exactly one box may ask for it at a time.
+      grow
     >
-      {sentence !== undefined && (
-        <div className="mb-2 border-b border-border pb-2">
-          <LogLine tone="dim">{sentence}</LogLine>
-        </div>
-      )}
-
       <CommandListContainer />
     </Panel>
   )
