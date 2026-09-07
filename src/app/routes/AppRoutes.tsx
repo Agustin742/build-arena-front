@@ -9,16 +9,16 @@ import { RequireSession } from '@/app/routes/RequireSession'
 import { ScreenPlaceholder } from '@/app/routes/ScreenPlaceholder'
 
 /**
- * No route for builds: listing, reading, renaming and deleting them all happen through
- * the console, behind the BUILDS command. The three placeholders that used to sit here
- * promised screens that were never going to be written.
+ * No route for builds, friends, battles or the ranking: every one of those turned out to
+ * be a command, and they are read and written from the console without ever leaving the
+ * lobby. The placeholders that used to sit here promised screens nobody was going to write.
+ *
+ * The arena stays, because a battle is the one thing that is not a list: it is a place the
+ * player is in, with its own address, and phase 9 fills it in.
  */
 const PROTECTED_SCREENS = [
   { path: undefined, name: 'lobby' },
-  { path: '/friends', name: 'friends' },
-  { path: '/battles', name: 'battles' },
   { path: '/battles/:battleId', name: 'arena' },
-  { path: '/leaderboard', name: 'leaderboard' },
 ] as const
 
 export function AppRoutes() {
