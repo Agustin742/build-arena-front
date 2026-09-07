@@ -7,6 +7,7 @@ import {
   type CommandResult,
   type ParsedArgs,
 } from '@/shared/commands'
+import { type CommandMenu } from '@/shared/commands'
 import { type BuildList, type PublicBuild } from '@/shared/contracts'
 import { ApiError, toGameMessage, toViolationMessages } from '@/shared/http'
 
@@ -15,9 +16,16 @@ import { buildDetailLines, buildListLines, buildSummary } from './build-lines'
 import { buildOptions, findBuild } from './build-picker'
 import { cachedBuilds, fetchBuilds, invalidateBuilds } from './build-queries'
 
+/** Opening and closing the console menu. The store lives in the app layer; this only asks. */
+export interface MenuControl {
+  open: (menu: CommandMenu) => void
+  close: () => void
+}
+
 export interface BuildCrudDeps {
   client: QueryClient
   api: BuildsApi
+  menu: MenuControl
 }
 
 const CONFIRM_YES = 'yes'
@@ -58,7 +66,7 @@ function refusalOf(error: unknown, byStatus: Readonly<Record<number, string>>): 
   return { status: 'error', message: toGameMessage(error) }
 }
 
-export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command[] {
+export function createBuildCrudCommands({ client, api, menu }: BuildCrudDeps): Command[] {
   // Read when a step is drawn, not when the command is registered: the list arrives late
   // and changes under the player as they create and delete.
   const known = (): BuildList => cachedBuilds(client) ?? []
@@ -99,16 +107,22 @@ export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command
       scope: ['lobby'],
       availability: available,
       run: async (): Promise<CommandResult> => {
-        try {
-          const builds = await fetchBuilds(client, api)
+        let builds
 
-          return {
-            status: 'ok',
-            message: headlineFor(builds.length),
-            lines: buildListLines(builds),
-          }
+        try {
+          builds = await fetchBuilds(client, api)
         } catch (error) {
+          // Stay in the lobby. A menu whose every command needs a list that never arrived
+          // is a room with nothing in it.
           return { status: 'error', message: toGameMessage(error) }
+        }
+
+        menu.open('builds')
+
+        return {
+          status: 'ok',
+          message: headlineFor(builds.length),
+          lines: buildListLines(builds),
         }
       },
     },
@@ -118,7 +132,7 @@ export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command
       hint: 'ver una build',
       aliases: ['build show'],
       args: [chooseBuild],
-      scope: ['lobby'],
+      scope: ['builds'],
       availability: available,
       run: (values): Promise<CommandResult> => {
         const target = pick(values)
@@ -149,7 +163,7 @@ export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command
           required: true,
         },
       ],
-      scope: ['lobby'],
+      scope: ['builds'],
       availability: available,
       run: async (values): Promise<CommandResult> => {
         const target = pick(values)
@@ -189,7 +203,7 @@ export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command
           options: (_ctx, values) => confirmDeleting(values),
         },
       ],
-      scope: ['lobby'],
+      scope: ['builds'],
       availability: available,
       run: async (values): Promise<CommandResult> => {
         const target = pick(values)
@@ -211,6 +225,20 @@ export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command
         await invalidateBuilds(client)
 
         return { status: 'ok', message: `Borré "${target.name}"` }
+      },
+    },
+    {
+      id: 'build-back',
+      label: 'VOLVER',
+      hint: 'salir de tus builds',
+      aliases: ['back', 'volver'],
+      args: [],
+      scope: ['builds'],
+      availability: available,
+      run: (): Promise<CommandResult> => {
+        menu.close()
+
+        return Promise.resolve({ status: 'ok', message: 'Volviste al lobby' })
       },
     },
   ]

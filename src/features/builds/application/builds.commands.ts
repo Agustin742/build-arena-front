@@ -20,7 +20,7 @@ import { ATTRIBUTE_KEYS } from '../domain/types'
 import { type BuildDraft, type BuildsApi } from '../infrastructure/builds.api'
 import { adviceMessage } from './build-messages'
 import { invalidateBuilds } from './build-queries'
-import { createBuildCrudCommands } from './builds.crud'
+import { createBuildCrudCommands, type MenuControl } from './builds.crud'
 import {
   ATTRIBUTE_GROUP,
   ATTRIBUTE_STEP_LABEL,
@@ -38,6 +38,7 @@ import {
 export interface BuildCommandDeps {
   client: QueryClient
   api: BuildsApi
+  menu: MenuControl
 }
 
 const CONFIRM_YES = 'yes'
@@ -150,7 +151,7 @@ function refusalOf(error: unknown): CommandResult {
   return { status: 'error', message: toGameMessage(error) }
 }
 
-export function createBuildsCommands({ client, api }: BuildCommandDeps): Command[] {
+export function createBuildsCommands({ client, api, menu }: BuildCommandDeps): Command[] {
   // Read at the moment a step is drawn, not when the command is registered: the catalog
   // lands asynchronously and the wizard outlives the request that warmed it.
   const catalogOf = () => cachedSkillCatalog(client) ?? []
@@ -162,7 +163,7 @@ export function createBuildsCommands({ client, api }: BuildCommandDeps): Command
       hint: 'armar una build',
       aliases: ['build new'],
       args: wizardArgs(catalogOf),
-      scope: ['lobby'],
+      scope: ['builds'],
       availability: () =>
         cachedSkillCatalog(client) === undefined ? blocked(CATALOG_MISSING) : available(),
       run: async (values): Promise<CommandResult> => {
@@ -187,6 +188,6 @@ export function createBuildsCommands({ client, api }: BuildCommandDeps): Command
         }
       },
     },
-    ...createBuildCrudCommands({ client, api }),
+    ...createBuildCrudCommands({ client, api, menu }),
   ]
 }
