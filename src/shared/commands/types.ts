@@ -1,11 +1,16 @@
+/**
+ * Where a command is allowed to appear. Note that 'battle' and 'battles' are one letter
+ * and a whole world apart: 'battle' is being inside a fight, 'battles' is standing in the
+ * menu that lists them. They never overlap — a fight outranks every menu.
+ */
 export type CommandScope =
-  'anonymous' | 'lobby' | 'battle' | 'reaction-window' | 'builds' | 'friends'
+  'anonymous' | 'lobby' | 'battle' | 'reaction-window' | 'builds' | 'friends' | 'battles'
 
 /**
  * The menus the console can step into. A menu replaces the lobby while it is open, so
  * every name here is also a scope: `deriveScopes` hands the menu straight through.
  */
-export type CommandMenu = 'builds' | 'friends'
+export type CommandMenu = 'builds' | 'friends' | 'battles'
 
 /**
  * Opening and closing a menu. The store lives in the app layer, so a feature that wants a
