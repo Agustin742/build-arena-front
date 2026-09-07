@@ -69,10 +69,11 @@ describe('AppShell scrolling', () => {
     expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('contentinfo'))
   })
 
-  it('scrolls the content instead of the page, so the prompt never leaves', () => {
+  it('never scrolls itself: each panel inside scrolls its own body instead', () => {
     renderShell()
 
-    expect(screen.getByRole('main')).toHaveClass('overflow-y-auto')
+    expect(screen.getByRole('main')).toHaveClass('overflow-hidden')
+    expect(screen.getByRole('main')).not.toHaveClass('overflow-y-auto')
   })
 
   it('lets the content area shrink, which a flex child will not do on its own', () => {
