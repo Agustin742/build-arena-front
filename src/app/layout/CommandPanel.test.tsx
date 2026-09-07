@@ -110,16 +110,19 @@ describe('CommandPanel', () => {
     expect(screen.getByText(/esc para cancelar/)).toBeInTheDocument()
   })
 
-  it('scrolls a list of options instead of running it off the console', () => {
+  it('takes the leftover height while it is the one asking, and scrolls inside it', () => {
     renderPanel(step({ label: 'A quién' }))
 
-    expect(screen.getByRole('region', { name: 'Opciones: A quién' })).toHaveClass('min-h-0')
+    expect(screen.getByRole('region', { name: 'Opciones: A quién' })).toHaveClass('flex-1')
   })
 
-  it('scrolls the command list too, because a menu can outgrow the console as well', () => {
+  it('holds still while the console is between questions, so the output can breathe', () => {
     renderPanel(null)
 
-    expect(screen.getByRole('region', { name: 'comandos' })).toHaveClass('min-h-0')
+    const region = screen.getByRole('region', { name: 'comandos' })
+
+    expect(region).toHaveClass('shrink-0')
+    expect(region).not.toHaveClass('flex-1')
   })
 })
 

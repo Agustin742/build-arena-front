@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { type CommandRuntime, CommandRuntimeContext } from '@/app/providers/command-runtime'
+import {
+  type CommandRuntime,
+  CommandRuntimeContext,
+  type PendingStep,
+} from '@/app/providers/command-runtime'
 import { type CommandResult, createCommandRegistry, EMPTY_NUMBERED_LIST } from '@/shared/commands'
 
 import { CommandResultLine } from './CommandResultLine'
@@ -83,9 +87,34 @@ describe('CommandResultLine', () => {
 
     expect(screen.getByRole('region', { name: 'salida' })).toBeInTheDocument()
   })
+
+  it('takes the leftover height while nothing is being asked, for a catalog of twelve', () => {
+    renderResult({ status: 'ok', message: 'Catálogo', lines: ['1) Golpe potente'] })
+
+    expect(screen.getByRole('region', { name: 'salida' })).toHaveClass('flex-1')
+  })
+
+  it('holds still while a step is open, instead of being crushed by the options', () => {
+    renderResult({ status: 'ok', message: 'Catálogo', lines: ['1) Golpe potente'] }, asking())
+
+    const region = screen.getByRole('region', { name: 'salida' })
+
+    expect(region).toHaveClass('shrink-0')
+    expect(region).not.toHaveClass('flex-1')
+  })
 })
 
-function renderResult(lastResult: CommandResult | null) {
+/** A step waiting on an answer: the console is asking, so the output is only context. */
+function asking(): PendingStep {
+  return {
+    arg: { name: 'player', kind: 'pick', label: 'A quién', required: true },
+    index: 1,
+    total: 1,
+    group: null,
+  }
+}
+
+function renderResult(lastResult: CommandResult | null, pendingStep: PendingStep | null = null) {
   const runtime: CommandRuntime = {
     ctx: {
       activeScopes: ['lobby'],
@@ -94,7 +123,7 @@ function renderResult(lastResult: CommandResult | null) {
     },
     registry: createCommandRegistry([]),
     pending: null,
-    pendingStep: null,
+    pendingStep,
     promptError: undefined,
     lastResult,
     selectItem: () => undefined,
