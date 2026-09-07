@@ -63,6 +63,26 @@ describe('CommandResultLine', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('1) POWER_STRIKE 4pts')
   })
+  it('frames the messages in a panel of their own, like every other box', () => {
+    renderResult({ status: 'ok', message: 'Catálogo', lines: ['1) Golpe potente'] })
+
+    expect(screen.getByRole('region', { name: 'salida' })).toBeInTheDocument()
+  })
+
+  it('scrolls the messages instead of pushing the prompt away', () => {
+    renderResult({ status: 'ok', message: 'Catálogo', lines: ['1) Golpe potente'] })
+
+    const body = screen.getByRole('status').parentElement
+
+    expect(body).toHaveClass('overflow-y-auto')
+    expect(body).toHaveClass('console-scroll')
+  })
+
+  it('frames a failure the same way, so the console does not jump around', () => {
+    renderResult({ status: 'error', message: 'La arena rechazó la build' })
+
+    expect(screen.getByRole('region', { name: 'salida' })).toBeInTheDocument()
+  })
 })
 
 function renderResult(lastResult: CommandResult | null) {

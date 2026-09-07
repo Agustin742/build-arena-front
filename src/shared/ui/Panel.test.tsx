@@ -46,3 +46,35 @@ describe('Panel', () => {
     expect(screen.getByText('3 de 5')).toBeInTheDocument()
   })
 })
+
+describe('Panel that scrolls its own body', () => {
+  it('keeps its heading still and scrolls only what it holds', () => {
+    render(
+      <Panel title="acción 1" scroll>
+        <p>una opción</p>
+      </Panel>,
+    )
+
+    const body = screen.getByText('una opción').parentElement
+
+    expect(body).toHaveClass('overflow-y-auto')
+    expect(body).toHaveClass('min-h-0')
+    expect(body).toHaveClass('console-scroll')
+  })
+
+  it('lets the panel shrink instead of pushing what sits below it off the screen', () => {
+    render(
+      <Panel title="acción 1" scroll>
+        <p>una opción</p>
+      </Panel>,
+    )
+
+    expect(screen.getByRole('region', { name: 'acción 1' })).toHaveClass('min-h-0')
+  })
+
+  it('leaves a plain panel alone, it grows with what it holds', () => {
+    render(<Panel title="comandos">contenido</Panel>)
+
+    expect(screen.getByText('contenido').parentElement).not.toHaveClass('overflow-y-auto')
+  })
+})

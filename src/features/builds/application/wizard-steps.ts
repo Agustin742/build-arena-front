@@ -1,5 +1,6 @@
 import { type CommandOption, type ParsedArgs } from '@/shared/commands'
 import { type PublicSkill, type SkillCatalog } from '@/shared/contracts'
+import { CONDITION_NAME, skillName } from '@/shared/game-text'
 
 import {
   ATTRIBUTE_BASE,
@@ -188,8 +189,8 @@ function skillHint(skill: PublicSkill): string {
     const rounds = skill.conditionRounds
     parts.push(
       rounds === null
-        ? skill.appliesCondition
-        : `${skill.appliesCondition} ${String(rounds)} ${rounds === 1 ? 'ronda' : 'rondas'}`,
+        ? CONDITION_NAME[skill.appliesCondition]
+        : `${CONDITION_NAME[skill.appliesCondition]} ${String(rounds)} ${rounds === 1 ? 'ronda' : 'rondas'}`,
     )
   }
 
@@ -217,7 +218,7 @@ export function skillOptions(
 
       return {
         id: skill.code,
-        label: skill.code,
+        label: skillName(skill.code),
         hint: skillHint(skill),
         ...(lock === undefined ? {} : { lockedReason: lock }),
       }

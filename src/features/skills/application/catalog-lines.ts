@@ -1,12 +1,13 @@
 import { type PublicSkill, type SkillCatalog, type SkillType } from '@/shared/contracts'
+import { ATTRIBUTE_NAME, CONDITION_NAME, skillName } from '@/shared/game-text'
 
 const HEADING: Record<SkillType, string> = {
   ACTION: 'ACCIONES',
   REACTION: 'REACCIONES',
 }
 
-/** Wide enough for RECKLESS_BLOW and CONSTITUTION 12, the longest of each column. */
-const CODE_WIDTH = 15
+/** Wide enough for the longest name and the longest requirement of the seeded catalog. */
+const NAME_WIDTH = 17
 const COST_WIDTH = 6
 const REQUIREMENT_WIDTH = 16
 const DAMAGE_WIDTH = 6
@@ -16,21 +17,22 @@ function conditionOf(skill: PublicSkill): string {
     return ''
   }
 
+  const name = CONDITION_NAME[skill.appliesCondition]
   const rounds = skill.conditionRounds
 
   if (rounds === null) {
-    return skill.appliesCondition
+    return name
   }
 
-  return `${skill.appliesCondition} ${String(rounds)} ${rounds === 1 ? 'ronda' : 'rondas'}`
+  return `${name} ${String(rounds)} ${rounds === 1 ? 'ronda' : 'rondas'}`
 }
 
 function lineFor(skill: PublicSkill): string {
   const cost = `${String(skill.cost)}pts`
-  const requirement = `${skill.requiredAttribute} ${String(skill.requiredValue)}`
+  const requirement = `${ATTRIBUTE_NAME[skill.requiredAttribute]} ${String(skill.requiredValue)}`
 
   return [
-    skill.code.padEnd(CODE_WIDTH),
+    skillName(skill.code).padEnd(NAME_WIDTH),
     cost.padEnd(COST_WIDTH),
     requirement.padEnd(REQUIREMENT_WIDTH),
     (skill.damageDice ?? '').padEnd(DAMAGE_WIDTH),

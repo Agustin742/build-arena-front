@@ -57,3 +57,34 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: /ir al contenido/i })).toHaveFocus()
   })
 })
+
+describe('AppShell scrolling', () => {
+  it('keeps the prompt out of the area that scrolls', () => {
+    renderShell(
+      <PromptPortal>
+        <p>prompt de la pantalla</p>
+      </PromptPortal>,
+    )
+
+    expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('contentinfo'))
+  })
+
+  it('never scrolls itself: each panel inside scrolls its own body instead', () => {
+    renderShell()
+
+    expect(screen.getByRole('main')).toHaveClass('overflow-hidden')
+    expect(screen.getByRole('main')).not.toHaveClass('overflow-y-auto')
+  })
+
+  it('lets the content area shrink, which a flex child will not do on its own', () => {
+    renderShell()
+
+    expect(screen.getByRole('main')).toHaveClass('min-h-0')
+  })
+
+  it('holds the console to the height of the window', () => {
+    const { container } = renderShell()
+
+    expect(container.firstElementChild).toHaveClass('h-full')
+  })
+})

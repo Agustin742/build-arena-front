@@ -1,6 +1,8 @@
+import { ATTRIBUTE_NAME } from '@/shared/game-text'
+
 import { type BuildAdvice } from '../domain/advice'
 import { ACTION_SLOTS, REACTION_SLOTS, type SkillLock, slotsFor } from '../domain/kit'
-import { type SkillKind } from '../domain/types'
+import { type AttributeName, type SkillKind } from '../domain/types'
 
 const SLOT_NOUN: Record<SkillKind, string> = {
   ACTION: 'acciones',
@@ -16,7 +18,7 @@ export function lockMessage(lock: SkillLock): string {
     case 'duplicate':
       return 'ya está en tu kit'
     case 'requirement':
-      return `necesita ${lock.attribute} ${String(lock.required)}, tenés ${String(lock.current)}`
+      return `necesita ${named(lock.attribute)} ${String(lock.required)}, tenés ${String(lock.current)}`
     case 'slots':
       return `ya elegiste tus ${String(slotsFor(lock.type))} ${SLOT_NOUN[lock.type]}`
     case 'budget':
@@ -26,13 +28,18 @@ export function lockMessage(lock: SkillLock): string {
   }
 }
 
+/** The domain speaks the wire enum; the player reads the game. */
+function named(attribute: AttributeName): string {
+  return ATTRIBUTE_NAME[attribute]
+}
+
 export function adviceMessage(advice: BuildAdvice): string {
   if (advice.kind === 'no-magic-answer') {
     return 'Tus dos reacciones solo responden a ataques físicos: contra magia comés el hechizo entero'
   }
 
-  // The spread keys are the attribute names in lower case, so this needs no table.
-  const attribute = advice.attribute.toUpperCase()
+  // The spread keys are the wire enum in lower case, so this needs no table of its own.
+  const attribute = named(advice.attribute.toUpperCase() as AttributeName)
 
   return `${attribute} en 15 da el mismo +2 que en 14, y ninguna habilidad pide más de 14: son 2 puntos tirados`
 }

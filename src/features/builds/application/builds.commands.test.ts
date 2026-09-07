@@ -145,7 +145,7 @@ describe('createBuildsCommands', () => {
       const options = optionsOf('action1', ANSWERS)
 
       expect(options.find((option) => option.id === 'PRECISE_SHOT')?.lockedReason).toBe(
-        'necesita DEXTERITY 13, tenés 12',
+        'necesita Destreza 13, tenés 12',
       )
     })
 
@@ -284,7 +284,7 @@ describe('createBuildsCommands', () => {
     it('warns that the ceiling bought nothing', async () => {
       const result = await run({ ...ANSWERS, magic: '15', dexterity: '8', constitution: '8' })
 
-      expect(result.lines?.some((line) => line.startsWith('MAGIC en 15'))).toBe(true)
+      expect(result.lines?.some((line) => line.startsWith('Magia en 15'))).toBe(true)
     })
 
     it('warns about a kit with no answer to magic', async () => {

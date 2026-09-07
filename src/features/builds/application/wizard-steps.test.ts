@@ -204,6 +204,7 @@ describe('skillOptions', () => {
     const options = skillOptions(CATALOG, MAGE, 'REACTION')
 
     expect(options.map((option) => option.id)).toEqual(['BRACE', 'PARRY', 'RIPOSTE'])
+    expect(options.map((option) => option.label)).toEqual(['Aguantar', 'Parada', 'Riposta'])
   })
 
   it('shows what a skill costs and what it rolls', () => {
@@ -216,7 +217,7 @@ describe('skillOptions', () => {
     const options = skillOptions(CATALOG, MAGE, 'ACTION')
 
     expect(options.find((option) => option.id === 'VENOM_BOLT')?.hint).toBe(
-      '4pts · 1d4 · POISONED 3 rondas',
+      '4pts · 1d4 · Envenenado 3 rondas',
     )
   })
 
@@ -230,7 +231,7 @@ describe('skillOptions', () => {
     const options = skillOptions(CATALOG, MAGE, 'ACTION')
 
     expect(options.find((option) => option.id === 'PRECISE_SHOT')?.lockedReason).toBe(
-      'necesita DEXTERITY 13, tenés 12',
+      'necesita Destreza 13, tenés 12',
     )
   })
 

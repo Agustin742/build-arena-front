@@ -225,10 +225,10 @@ describe('ConsoleLayout', () => {
 
     await userEvent.type(screen.getByRole('textbox'), 'skills{Enter}')
 
-    expect(await screen.findByText(/POWER_STRIKE/)).toBeInTheDocument()
+    expect(await screen.findByText(/Golpe potente/)).toBeInTheDocument()
     expect(screen.getByText('ACCIONES')).toBeInTheDocument()
     expect(screen.getByText('REACCIONES')).toBeInTheDocument()
-    expect(screen.getByText(/BRACE/)).toBeInTheDocument()
+    expect(screen.getByText(/Aguantar/)).toBeInTheDocument()
   })
 
   it('asks the arena for the catalog once, however many times it is listed', async () => {
@@ -243,9 +243,9 @@ describe('ConsoleLayout', () => {
     renderConsole()
 
     await userEvent.type(screen.getByRole('textbox'), 'skills{Enter}')
-    await screen.findByText(/POWER_STRIKE/)
+    await screen.findByText(/Golpe potente/)
     await userEvent.type(screen.getByRole('textbox'), 'skills{Enter}')
-    await screen.findByText(/POWER_STRIKE/)
+    await screen.findByText(/Golpe potente/)
 
     expect(asked).toHaveBeenCalledTimes(1)
   })
@@ -302,7 +302,7 @@ describe('ConsoleLayout', () => {
     await answer('12')
     await answer('12')
 
-    expect(screen.getByText('necesita DEXTERITY 13, tenés 12')).toBeInTheDocument()
+    expect(screen.getByText('necesita Destreza 13, tenés 12')).toBeInTheDocument()
   })
 
   it('refuses a locked skill typed by name, the same as clicking it', async () => {
@@ -318,7 +318,7 @@ describe('ConsoleLayout', () => {
     await answer('12')
     await answer('PRECISE_SHOT')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('necesita DEXTERITY 13, tenés 12')
+    expect(await screen.findByRole('alert')).toHaveTextContent('necesita Destreza 13, tenés 12')
   })
 
   it('renders every violation the arena answers with, not just the first', async () => {
