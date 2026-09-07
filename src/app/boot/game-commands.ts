@@ -2,6 +2,7 @@ import { type Command } from '@/shared/commands'
 
 import { authCommands } from './auth-commands'
 import { buildCommands } from './build-commands'
+import { friendshipCommands } from './friendship-commands'
 import { leaderboardCommands } from './leaderboard-commands'
 import { skillCommands } from './skill-commands'
 
@@ -11,4 +12,5 @@ export const gameCommands: readonly Command[] = [
   ...skillCommands,
   ...buildCommands,
   ...leaderboardCommands,
+  ...friendshipCommands,
 ]
