@@ -20,6 +20,7 @@ import { ATTRIBUTE_KEYS } from '../domain/types'
 import { type BuildDraft, type BuildsApi } from '../infrastructure/builds.api'
 import { adviceMessage } from './build-messages'
 import { invalidateBuilds } from './build-queries'
+import { createBuildCrudCommands } from './builds.crud'
 import {
   ATTRIBUTE_GROUP,
   ATTRIBUTE_STEP_LABEL,
@@ -186,5 +187,6 @@ export function createBuildsCommands({ client, api }: BuildCommandDeps): Command
         }
       },
     },
+    ...createBuildCrudCommands({ client, api }),
   ]
 }
