@@ -170,6 +170,62 @@ describe('createBuildsCommands', () => {
     })
   })
 
+  describe('what each step says it is asking', () => {
+    it('explains the attribute step instead of only naming it', () => {
+      expect(argOf('strength')).toMatchObject({
+        label: 'Fuerza',
+        prompt: 'Elegí tu nivel de fuerza',
+        group: 'atributo',
+      })
+    })
+
+    it('counts the four attributes as one group', () => {
+      const groups = wizard()
+        .args.filter((arg) => arg.group === 'atributo')
+        .map((arg) => arg.name)
+
+      expect(groups).toEqual(['strength', 'magic', 'dexterity', 'constitution'])
+    })
+
+    it('counts the four kit steps as one group of their own', () => {
+      const groups = wizard()
+        .args.filter((arg) => arg.group === 'habilidad')
+        .map((arg) => arg.name)
+
+      expect(groups).toEqual(['action1', 'action2', 'reaction1', 'reaction2'])
+    })
+
+    it('tells the attribute step how many points are left to spend', () => {
+      expect(argOf('magic')?.describe?.({ strength: '14' })).toBe('te quedan 13 de 20 puntos')
+    })
+
+    it('starts the attribute steps with the whole budget', () => {
+      expect(argOf('strength')?.describe?.({})).toBe('te quedan 20 de 20 puntos')
+    })
+
+    it('tells the kit step what is left of its own budget', () => {
+      const halfway = { strength: '12', magic: '14', action1: 'POWER_STRIKE' }
+
+      expect(argOf('action2')?.describe?.(halfway)).toBe('te quedan 14 de 18 puntos del kit')
+    })
+
+    it('does not charge the kit step for the answer it is replacing', () => {
+      const replaying = { action1: 'POWER_STRIKE', action2: 'FIREBALL' }
+
+      expect(argOf('action2')?.describe?.(replaying)).toBe('te quedan 14 de 18 puntos del kit')
+    })
+
+    it('explains what the confirmation step is for', () => {
+      expect(argOf('confirm')).toMatchObject({
+        prompt: 'Revisá la build antes de guardarla',
+      })
+    })
+
+    it('leaves the name step without a group, it belongs to no set', () => {
+      expect(argOf('name')?.group).toBeUndefined()
+    })
+  })
+
   describe('running the wizard', () => {
     it('posts the draft the player assembled', async () => {
       const { client, api, create } = deps()
@@ -322,6 +378,10 @@ function wizard() {
   }
 
   return command
+}
+
+function argOf(name: string) {
+  return wizard().args.find((arg) => arg.name === name)
 }
 
 function optionsOf(argName: string, values: ParsedArgs) {
