@@ -26,6 +26,12 @@ const profile = {
 
 const pair = { accessToken: 'access-1', refreshToken: 'refresh-1' }
 
+const rival = {
+  id: '5c2b8d1f-7e3a-4a9c-8b6d-2f1e0a9c8b7d',
+  username: 'grace',
+  rating: 1350,
+}
+
 function reaction(
   code: string,
   requiredAttribute: PublicSkill['requiredAttribute'],
@@ -444,5 +450,42 @@ describe('ConsoleLayout', () => {
 
     expect(await screen.findByText(/Borré "Duelista"/)).toBeInTheDocument()
     expect(deleted).toHaveBeenCalled()
+  })
+
+  it('walks the console through the ranking and marks the reader inside it', async () => {
+    useSessionStore.getState().setTokens(pair)
+    useSessionStore.getState().setUser(profile)
+    server.use(
+      http.get(`${baseUrl}/leaderboard`, () =>
+        HttpResponse.json([
+          { rank: 1, id: rival.id, username: rival.username, rating: rival.rating },
+          { rank: 2, id: profile.id, username: profile.username, rating: profile.rating },
+        ]),
+      ),
+    )
+    renderConsole()
+
+    await answer('top')
+    await answer('50')
+
+    expect(await screen.findByText(/grace/)).toBeInTheDocument()
+    expect(screen.getByText(/ada\s+1200\s+· vos/)).toBeInTheDocument()
+  })
+
+  it('takes the size typed with the command, without drawing the step', async () => {
+    const seen = vi.fn()
+    useSessionStore.getState().setTokens(pair)
+    server.use(
+      http.get(`${baseUrl}/leaderboard`, ({ request }) => {
+        seen(new URL(request.url).searchParams.get('limit'))
+        return HttpResponse.json([])
+      }),
+    )
+    renderConsole()
+
+    await answer('top 10')
+
+    expect(await screen.findByText('Todavía no peleó nadie')).toBeInTheDocument()
+    expect(seen).toHaveBeenCalledWith('10')
   })
 })
