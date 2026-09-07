@@ -5,8 +5,8 @@ import { type Command, type CommandContext } from '@/shared/commands'
 import { ApiError } from '@/shared/http'
 
 import { type LeaderboardApi } from '../infrastructure/leaderboard.api'
-import { cachedLeaderboard } from './leaderboard-queries'
 import { createLeaderboardCommands, type LeaderboardCommandDeps } from './leaderboard.commands'
+import { cachedLeaderboard } from './leaderboard-queries'
 
 const ADA = { rank: 1, id: 'ada-id', username: 'ada', rating: 1216 }
 const GRACE = { rank: 2, id: 'grace-id', username: 'grace', rating: 1180 }
