@@ -1,4 +1,5 @@
-import { canAccept, type FriendshipFacts, type Removal } from '../domain/relation'
+import { canAccept, type Removal } from '../domain/relation'
+import { type FriendshipFacts } from '../domain/types'
 
 /**
  * What the player is about to do, in their own words. The rules decide which of the three

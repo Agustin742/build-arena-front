@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { acceptLock, removalDone, REMOVAL_LABEL } from './friendship-messages'
+import { acceptLock, REMOVAL_LABEL, removalDone } from './friendship-messages'
 
 describe('REMOVAL_LABEL', () => {
   it('names the three different things one delete verb does', () => {
