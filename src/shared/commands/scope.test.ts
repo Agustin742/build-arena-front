@@ -53,6 +53,17 @@ describe('deriveScopes inside a menu', () => {
     expect(deriveScopes(state)).toEqual(['builds'])
   })
 
+  it('swaps the lobby for any other menu just the same', () => {
+    const state: CommandState = {
+      isAuthenticated: true,
+      battleId: null,
+      reactionWindowOpen: false,
+      menu: 'friends',
+    }
+
+    expect(deriveScopes(state)).toEqual(['friends'])
+  })
+
   it('stays in the lobby while no menu is open', () => {
     const state: CommandState = {
       isAuthenticated: true,
