@@ -47,6 +47,47 @@ describe('Panel', () => {
   })
 })
 
+describe('Panel with a lead line', () => {
+  it('shows the lead above what the panel holds', () => {
+    render(
+      <Panel title="a quién" lead={<span>Elegí a quién desafiar</span>}>
+        <p>una opción</p>
+      </Panel>,
+    )
+
+    expect(screen.getByText('Elegí a quién desafiar')).toBeInTheDocument()
+  })
+
+  it('keeps the lead out of the box that scrolls, so the question stays put', () => {
+    render(
+      <Panel title="a quién" lead={<span>Elegí a quién desafiar</span>} scroll>
+        <p>una opción</p>
+      </Panel>,
+    )
+
+    const scroller = screen.getByText('una opción').parentElement
+
+    expect(scroller).toHaveClass('overflow-y-auto')
+    expect(scroller).not.toContainElement(screen.getByText('Elegí a quién desafiar'))
+  })
+
+  it('refuses to be squeezed along with the list below it', () => {
+    render(
+      <Panel title="a quién" lead={<span>Elegí a quién desafiar</span>} scroll>
+        <p>una opción</p>
+      </Panel>,
+    )
+
+    expect(screen.getByText('Elegí a quién desafiar').parentElement).toHaveClass('shrink-0')
+  })
+
+  it('takes up no room at all when there is no lead to show', () => {
+    const { container } = render(<Panel title="a quién">content</Panel>)
+
+    expect(container.querySelectorAll('.shrink-0')).toHaveLength(1)
+  })
+})
+
 describe('Panel that scrolls its own body', () => {
   it('keeps its heading still and scrolls only what it holds', () => {
     render(
