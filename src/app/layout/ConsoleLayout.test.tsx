@@ -539,6 +539,93 @@ describe('ConsoleLayout', () => {
     expect(accepted).not.toHaveBeenCalled()
   })
 
+  it('challenges somebody found in the ranking without ever typing a uuid', async () => {
+    const sent = vi.fn()
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    server.use(
+      http.get(`${baseUrl}/battles`, () => HttpResponse.json([])),
+      http.get(`${baseUrl}/builds`, () => HttpResponse.json([storedBuild])),
+      http.get(`${baseUrl}/friendships`, () => HttpResponse.json([])),
+      http.get(`${baseUrl}/leaderboard`, () =>
+        HttpResponse.json([
+          { rank: 1, id: rival.id, username: rival.username, rating: rival.rating },
+        ]),
+      ),
+      http.post(`${baseUrl}/battles`, async ({ request }) => {
+        sent(await request.json())
+        return HttpResponse.json(
+          {
+            id: 'd4e5f6a7-8b9c-4d0e-8f1a-2b3c4d5e6f70',
+            status: 'PENDING',
+            ranked: true,
+            role: 'CHALLENGER',
+            rival,
+            outcome: null,
+            currentRound: 0,
+            createdAt: '2026-09-07T10:15:00.000Z',
+            startedAt: null,
+            endedAt: null,
+          },
+          { status: 201 },
+        )
+      }),
+    )
+    renderConsole()
+
+    await answer('battles')
+    await screen.findByText('CHALLENGE')
+
+    await answer('challenge')
+    await answer('1')
+    await answer('1')
+
+    expect(await screen.findByText('Desafiaste a grace con Duelista')).toBeInTheDocument()
+    expect(sent).toHaveBeenCalledWith({ opponentId: rival.id, buildId: storedBuild.id })
+  })
+
+  it('refuses to cancel a challenge somebody else sent, and points at rejecting', async () => {
+    const cancelled = vi.fn()
+    const invitation = {
+      id: 'd4e5f6a7-8b9c-4d0e-8f1a-2b3c4d5e6f70',
+      status: 'PENDING',
+      ranked: false,
+      role: 'OPPONENT',
+      rival,
+      outcome: null,
+      currentRound: 0,
+      createdAt: '2026-09-07T10:15:00.000Z',
+      startedAt: null,
+      endedAt: null,
+    }
+    useSessionStore.getState().setTokens(pair)
+    server.use(
+      http.get(`${baseUrl}/battles`, () => HttpResponse.json([invitation])),
+      http.get(`${baseUrl}/builds`, () => HttpResponse.json([])),
+      http.get(`${baseUrl}/friendships`, () => HttpResponse.json([])),
+      http.get(`${baseUrl}/leaderboard`, () => HttpResponse.json([])),
+      http.patch(`${baseUrl}/battles/${invitation.id}/cancel`, () => {
+        cancelled()
+        return HttpResponse.json(invitation)
+      }),
+    )
+    renderConsole()
+
+    await answer('battles')
+
+    expect(await screen.findByText('TE DESAFIARON')).toBeInTheDocument()
+    // The unranked rule is invisible in the payload, so the row has to carry it.
+    expect(screen.getByText(/sin rating en juego/)).toBeInTheDocument()
+
+    await answer('cancel')
+    await answer('1')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este te lo mandaron: para eso está rechazarlo',
+    )
+    expect(cancelled).not.toHaveBeenCalled()
+  })
+
   it('takes the size typed with the command, without drawing the step', async () => {
     const seen = vi.fn()
     useSessionStore.getState().setTokens(pair)
