@@ -4,7 +4,7 @@ import { LogLine, Panel } from '@/shared/ui'
 const TITLE = 'salida'
 
 export function CommandResultLine() {
-  const { lastResult } = useCommandRuntime()
+  const { lastResult, pendingStep } = useCommandRuntime()
 
   if (lastResult === null) {
     return null
@@ -19,9 +19,17 @@ export function CommandResultLine() {
   const failed = lastResult.status === 'error'
 
   return (
-    // The one box that scrolls. A catalog of twelve skills lands here, and it gives up
-    // its own height rather than pushing the prompt off the console.
-    <Panel title={TITLE} {...(failed ? { note: 'la arena rechazó algo' } : {})} scroll>
+    // Between questions this is what the player came to read — a catalog of twelve skills
+    // lands here — so it takes the leftover height and gives it up rather than pushing the
+    // prompt off the console. While a step is open it steps aside: the options are what
+    // needs the room, and a five line output squeezed next to a hundred row list is a
+    // scrollbar around nothing.
+    <Panel
+      title={TITLE}
+      {...(failed ? { note: 'la arena rechazó algo' } : {})}
+      scroll
+      grow={pendingStep === null}
+    >
       <div role={failed ? 'alert' : 'status'} className="flex flex-col">
         {lastResult.message === undefined ? null : (
           <LogLine marker="»" tone={failed ? 'error' : 'success'}>
