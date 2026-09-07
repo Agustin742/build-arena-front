@@ -20,6 +20,13 @@ const WIZARD: Command = {
     { name: 'name', kind: 'text', label: 'Nombre', required: true },
     { name: 'strength', kind: 'pick', label: 'Fuerza', required: true, group: 'atributo' },
     { name: 'magic', kind: 'pick', label: 'Magia', required: true, group: 'atributo' },
+    {
+      name: 'action1',
+      kind: 'pick',
+      label: 'Acción 1',
+      required: true,
+      options: () => [{ id: 'POWER_STRIKE', label: 'Golpe potente' }],
+    },
     { name: 'secret', kind: 'password', label: 'Contraseña', required: true },
   ],
   scope: ['lobby'],
@@ -43,7 +50,7 @@ describe('CommandChecklist', () => {
   it('lists every step of the run from the first one, so the end is in sight', () => {
     renderChecklist({ commandId: 'build-new', values: {}, awaiting: 'name' })
 
-    expect(screen.getAllByRole('listitem')).toHaveLength(4)
+    expect(screen.getAllByRole('listitem')).toHaveLength(5)
     expect(screen.getByText('Nombre')).toBeInTheDocument()
     expect(screen.getByText('Magia')).toBeInTheDocument()
   })
@@ -57,6 +64,23 @@ describe('CommandChecklist', () => {
 
     expect(screen.getByText('Duelista')).toBeInTheDocument()
     expect(screen.getByText('14')).toBeInTheDocument()
+  })
+
+  it('shows the answer the way the list showed it, not the code it sent', () => {
+    renderChecklist({
+      commandId: 'build-new',
+      values: { name: 'Duelista', action1: 'POWER_STRIKE' },
+      awaiting: 'strength',
+    })
+
+    expect(screen.getByText('Golpe potente')).toBeInTheDocument()
+    expect(screen.queryByText('POWER_STRIKE')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the raw answer when the step offers no list', () => {
+    renderChecklist({ commandId: 'build-new', values: { name: 'Duelista' }, awaiting: 'strength' })
+
+    expect(screen.getByText('Duelista')).toBeInTheDocument()
   })
 
   it('marks the step that is being asked right now', () => {
