@@ -40,3 +40,49 @@ describe('deriveScopes', () => {
     expect(deriveScopes(state)).toEqual(['battle', 'reaction-window'])
   })
 })
+
+describe('deriveScopes inside a menu', () => {
+  it('swaps the lobby for the menu the console opened', () => {
+    const state: CommandState = {
+      isAuthenticated: true,
+      battleId: null,
+      reactionWindowOpen: false,
+      menu: 'builds',
+    }
+
+    expect(deriveScopes(state)).toEqual(['builds'])
+  })
+
+  it('stays in the lobby while no menu is open', () => {
+    const state: CommandState = {
+      isAuthenticated: true,
+      battleId: null,
+      reactionWindowOpen: false,
+      menu: null,
+    }
+
+    expect(deriveScopes(state)).toEqual(['lobby'])
+  })
+
+  it('lets a battle outrank any menu left open, because a battle cannot wait', () => {
+    const state: CommandState = {
+      isAuthenticated: true,
+      battleId: 'battle-1',
+      reactionWindowOpen: false,
+      menu: 'builds',
+    }
+
+    expect(deriveScopes(state)).toEqual(['battle'])
+  })
+
+  it('keeps a menu out of reach of a player with no session', () => {
+    const state: CommandState = {
+      isAuthenticated: false,
+      battleId: null,
+      reactionWindowOpen: false,
+      menu: 'builds',
+    }
+
+    expect(deriveScopes(state)).toEqual(['anonymous'])
+  })
+})
