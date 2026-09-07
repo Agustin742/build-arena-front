@@ -79,6 +79,18 @@ const createdBuild = {
   updatedAt: '2026-09-06T10:15:00.000Z',
 }
 
+const storedBuild = {
+  id: '9d1e2f3a-4b5c-6d7e-8f90-1a2b3c4d5e6f',
+  name: 'Duelista',
+  strength: 12,
+  magic: 14,
+  dexterity: 12,
+  constitution: 12,
+  skills: [action('POWER_STRIKE', 'STRENGTH', 12, 4), reaction('BRACE', 'CONSTITUTION', 12, 3)],
+  createdAt: '2026-09-06T10:15:00.000Z',
+  updatedAt: '2026-09-06T10:15:00.000Z',
+}
+
 async function answer(raw: string) {
   await userEvent.type(screen.getByRole('textbox'), `${raw}{Enter}`)
 }
@@ -364,5 +376,58 @@ describe('ConsoleLayout', () => {
     renderConsole()
 
     expect(screen.getByText('el catálogo todavía no llegó')).toBeInTheDocument()
+  })
+
+  it('lists the builds the player owns, numbered and named', async () => {
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    server.use(http.get(`${baseUrl}/builds`, () => HttpResponse.json([storedBuild])))
+    renderConsole()
+
+    await answer('builds')
+
+    expect(await screen.findByText(/Duelista/)).toBeInTheDocument()
+    expect(screen.getByText(/CA 11/)).toBeInTheDocument()
+  })
+
+  it('reads a build back with the same names the wizard used', async () => {
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    server.use(http.get(`${baseUrl}/builds`, () => HttpResponse.json([storedBuild])))
+    renderConsole()
+
+    await answer('builds')
+    await screen.findByText(/Duelista/)
+    await answer('build show')
+    await answer('1')
+
+    expect(await screen.findByText(/Golpe potente/)).toBeInTheDocument()
+    expect(screen.getByText(/Aguantar/)).toBeInTheDocument()
+  })
+
+  it('names the build in the confirmation before it deletes anything', async () => {
+    const deleted = vi.fn()
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    server.use(
+      http.get(`${baseUrl}/builds`, () => HttpResponse.json([storedBuild])),
+      http.delete(`${baseUrl}/builds/${storedBuild.id}`, () => {
+        deleted()
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderConsole()
+
+    await answer('builds')
+    await screen.findByText(/Duelista/)
+    await answer('build rm')
+    await answer('1')
+
+    expect(screen.getByText(/Duelista · CA 11/)).toBeInTheDocument()
+
+    await answer('1')
+
+    expect(await screen.findByText(/Borré "Duelista"/)).toBeInTheDocument()
+    expect(deleted).toHaveBeenCalled()
   })
 })
