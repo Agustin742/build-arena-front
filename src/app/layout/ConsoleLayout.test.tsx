@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { gameCommands } from '@/app/boot/game-commands'
 import { queryClient } from '@/app/boot/query-client'
+import { useMenuStore } from '@/app/providers/menu.store'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { SKILLS_QUERY_KEY } from '@/features/skills'
 import { type PublicSkill, type SkillCatalog } from '@/shared/contracts'
@@ -91,6 +92,13 @@ const storedBuild = {
   updatedAt: '2026-09-06T10:15:00.000Z',
 }
 
+/** Everything about builds lives behind one door in the lobby. This walks through it. */
+async function enterBuilds(owned: unknown[] = []) {
+  server.use(http.get(`${baseUrl}/builds`, () => HttpResponse.json(owned)))
+  await answer('builds')
+  await screen.findByText('BUILD NEW')
+}
+
 async function answer(raw: string) {
   await userEvent.type(screen.getByRole('textbox'), `${raw}{Enter}`)
 }
@@ -112,6 +120,7 @@ describe('ConsoleLayout', () => {
   beforeEach(() => {
     useSessionStore.getState().clear()
     useThrottleStore.getState().release()
+    useMenuStore.getState().close()
     queryClient.clear()
   })
 
@@ -279,6 +288,7 @@ describe('ConsoleLayout', () => {
     )
     renderConsole()
 
+    await enterBuilds()
     await answer('build new')
     await answer('Duelista')
     await answer('12')
@@ -307,6 +317,7 @@ describe('ConsoleLayout', () => {
     queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
     renderConsole()
 
+    await enterBuilds()
     await answer('build new')
     await answer('Duelista')
     await answer('12')
@@ -322,6 +333,7 @@ describe('ConsoleLayout', () => {
     queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
     renderConsole()
 
+    await enterBuilds()
     await answer('build new')
     await answer('Duelista')
     await answer('12')
@@ -352,6 +364,7 @@ describe('ConsoleLayout', () => {
     )
     renderConsole()
 
+    await enterBuilds()
     await answer('build new')
     await answer('Duelista')
     await answer('12')
@@ -371,9 +384,11 @@ describe('ConsoleLayout', () => {
     expect(alert).toHaveTextContent('El kit se pasa del presupuesto de 18 puntos')
   })
 
-  it('holds the wizard shut while the catalog is still on its way', () => {
+  it('holds the wizard shut while the catalog is still on its way', async () => {
     useSessionStore.getState().setTokens(pair)
     renderConsole()
+
+    await enterBuilds()
 
     expect(screen.getByText('el catálogo todavía no llegó')).toBeInTheDocument()
   })
