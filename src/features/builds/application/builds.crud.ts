@@ -27,6 +27,15 @@ const NAME_TAKEN = 'Ya tenés una build con ese nombre'
 const REFUSED = 'La arena rechazó la build'
 const KEPT = 'La build sigue donde estaba'
 
+/** A console that says "1 builds" reads like a form, not like somebody talking to you. */
+function headlineFor(count: number): string {
+  if (count === 0) {
+    return 'No tenés ninguna build'
+  }
+
+  return count === 1 ? 'Tenés 1 build' : `Tenés ${String(count)} builds`
+}
+
 /**
  * The arena answers a rejected change with the complete array of broken rules, and a name
  * that is already taken with a conflict. Everything else falls back to the game message.
@@ -95,7 +104,7 @@ export function createBuildCrudCommands({ client, api }: BuildCrudDeps): Command
 
           return {
             status: 'ok',
-            message: `Tenés ${String(builds.length)} builds`,
+            message: headlineFor(builds.length),
             lines: buildListLines(builds),
           }
         } catch (error) {
