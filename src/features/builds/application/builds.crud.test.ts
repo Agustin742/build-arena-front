@@ -36,7 +36,15 @@ describe('the builds listing command', () => {
   })
 
   it('counts them in the headline', async () => {
-    expect((await run('builds')).message).toMatch(/2/)
+    expect((await run('builds')).message).toBe('Tenés 2 builds')
+  })
+
+  it('says one build in the singular, like a person would', async () => {
+    expect((await run('builds', { builds: [MAGE] })).message).toBe('Tenés 1 build')
+  })
+
+  it('does not count out loud when there is nothing to count', async () => {
+    expect((await run('builds', { builds: [] })).message).toBe('No tenés ninguna build')
   })
 
   it('says plainly when there are none', async () => {
