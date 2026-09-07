@@ -8,11 +8,13 @@ import { GuestOnly } from '@/app/routes/GuestOnly'
 import { RequireSession } from '@/app/routes/RequireSession'
 import { ScreenPlaceholder } from '@/app/routes/ScreenPlaceholder'
 
+/**
+ * No route for builds: listing, reading, renaming and deleting them all happen through
+ * the console, behind the BUILDS command. The three placeholders that used to sit here
+ * promised screens that were never going to be written.
+ */
 const PROTECTED_SCREENS = [
   { path: undefined, name: 'lobby' },
-  { path: '/builds', name: 'builds' },
-  { path: '/builds/new', name: 'build wizard' },
-  { path: '/builds/:buildId', name: 'build detail' },
   { path: '/friends', name: 'friends' },
   { path: '/battles', name: 'battles' },
   { path: '/battles/:battleId', name: 'arena' },

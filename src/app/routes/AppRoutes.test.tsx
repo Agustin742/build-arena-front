@@ -30,9 +30,6 @@ describe('AppRoutes', () => {
 
   it.each([
     ['/', 'lobby'],
-    ['/builds', 'builds'],
-    ['/builds/new', 'build wizard'],
-    ['/builds/42', 'build detail'],
     ['/friends', 'friends'],
     ['/battles', 'battles'],
     ['/battles/42', 'arena'],
@@ -47,9 +44,6 @@ describe('AppRoutes', () => {
 
   it.each([
     ['/', 'lobby'],
-    ['/builds', 'builds'],
-    ['/builds/new', 'build wizard'],
-    ['/builds/42', 'build detail'],
     ['/friends', 'friends'],
     ['/battles', 'battles'],
     ['/battles/42', 'arena'],
@@ -93,4 +87,17 @@ describe('AppRoutes', () => {
 
     expect(screen.getByRole('banner')).toHaveTextContent('build arena')
   })
+})
+
+describe('the routes builds used to have', () => {
+  it.each(['/builds', '/builds/new', '/builds/42'])(
+    'sends %s to the not found screen, because builds live in the console now',
+    (path) => {
+      useSessionStore.getState().setTokens(pair)
+
+      renderAt(path)
+
+      expect(screen.getByRole('heading', { name: 'not found' })).toBeInTheDocument()
+    },
+  )
 })
