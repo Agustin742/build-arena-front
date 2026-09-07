@@ -13,10 +13,18 @@ import {
  * of answers is drawn far from the prompt, so it needs to be able to say what it is a
  * list of: a column of numbers under a heading that says "comandos" means nothing.
  */
+/** Where a step sits among the ones that share its group, when it declares one. */
+export interface StepGroup {
+  name: string
+  index: number
+  total: number
+}
+
 export interface PendingStep {
   arg: CommandArg
   index: number
   total: number
+  group: StepGroup | null
 }
 
 export interface CommandRuntime {

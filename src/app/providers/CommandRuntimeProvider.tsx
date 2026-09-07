@@ -7,6 +7,7 @@ import {
   begin,
   CANCEL_ID,
   type Command,
+  type CommandArg,
   type CommandContext,
   type CommandResult,
   type CommandState,
@@ -24,12 +25,25 @@ import {
 } from '@/shared/commands'
 import { toGameMessage } from '@/shared/http'
 
-import { CommandRuntimeContext, type PendingStep } from './command-runtime'
+import { CommandRuntimeContext, type PendingStep, type StepGroup } from './command-runtime'
 
 interface CommandRuntimeProviderProps {
   commands: readonly Command[]
   state: CommandState
   children: ReactNode
+}
+
+/** Counts a step among the ones sharing its group, so a run of four reads as one of four. */
+function groupOf(args: readonly CommandArg[], step: CommandArg): StepGroup | null {
+  const name = step.group
+
+  if (name === undefined) {
+    return null
+  }
+
+  const siblings = args.filter((arg) => arg.group === name)
+
+  return { name, index: siblings.indexOf(step) + 1, total: siblings.length }
 }
 
 export function CommandRuntimeProvider({ commands, state, children }: CommandRuntimeProviderProps) {
@@ -58,7 +72,16 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
     const index = args.findIndex((arg) => arg.name === pending.awaiting)
     const arg = args[index]
 
-    return arg === undefined ? null : { arg, index: index + 1, total: args.length }
+    if (arg === undefined) {
+      return null
+    }
+
+    return {
+      arg,
+      index: index + 1,
+      total: args.length,
+      group: groupOf(args, arg),
+    }
   }, [pending, registry])
 
   const pendingArg = pendingStep?.arg
