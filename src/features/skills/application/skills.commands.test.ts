@@ -48,8 +48,8 @@ describe('createSkillsCommands', () => {
     expect(result.status).toBe('ok')
     expect(result.lines).toContain('ACCIONES')
     expect(result.lines).toContain('REACCIONES')
-    expect(result.lines?.some((line) => line.includes('POWER_STRIKE'))).toBe(true)
-    expect(result.lines?.some((line) => line.includes('BRACE'))).toBe(true)
+    expect(result.lines?.some((line) => line.includes('Golpe potente'))).toBe(true)
+    expect(result.lines?.some((line) => line.includes('Aguantar'))).toBe(true)
   })
 
   it('counts the skills it found in the headline', async () => {

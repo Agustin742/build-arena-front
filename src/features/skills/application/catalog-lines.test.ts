@@ -43,16 +43,16 @@ describe('catalogLines', () => {
   it('gives a skill its cost, its requirement and its damage', () => {
     const [, line] = catalogLines([POWER_STRIKE])
 
-    expect(line).toMatch(/POWER_STRIKE/)
+    expect(line).toMatch(/Golpe potente/)
     expect(line).toMatch(/4pts/)
-    expect(line).toMatch(/STRENGTH 12/)
+    expect(line).toMatch(/Fuerza 12/)
     expect(line).toMatch(/1d8/)
   })
 
   it('names the condition a skill applies and how long it lasts', () => {
     const [, line] = catalogLines([VENOM_BOLT])
 
-    expect(line).toMatch(/POISONED 3 rondas/)
+    expect(line).toMatch(/Envenenado 3 rondas/)
   })
 
   it('says one round in the singular', () => {
@@ -67,13 +67,13 @@ describe('catalogLines', () => {
       conditionRounds: 1,
     })
 
-    expect(catalogLines([spike])[1]).toMatch(/STUNNED 1 ronda\b/)
+    expect(catalogLines([spike])[1]).toMatch(/Aturdido 1 ronda\b/)
   })
 
   it('leaves a reaction that deals no damage without a damage column', () => {
     const [, line] = catalogLines([BRACE])
 
-    expect(line).toMatch(/CONSTITUTION 12/)
+    expect(line).toMatch(/Constitución 12/)
     expect(line).not.toMatch(/\dd\d/)
   })
 

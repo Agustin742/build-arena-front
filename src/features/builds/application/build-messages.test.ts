@@ -6,12 +6,12 @@ describe('lockMessage', () => {
   it('names the attribute a skill asks for and what the build has', () => {
     expect(
       lockMessage({ kind: 'requirement', attribute: 'DEXTERITY', required: 13, current: 12 }),
-    ).toBe('necesita DEXTERITY 13, tenés 12')
+    ).toBe('necesita Destreza 13, tenés 12')
   })
 
   it('says how short the build is when the gap is wide', () => {
     expect(lockMessage({ kind: 'requirement', attribute: 'MAGIC', required: 14, current: 8 })).toBe(
-      'necesita MAGIC 14, tenés 8',
+      'necesita Magia 14, tenés 8',
     )
   })
 
@@ -40,13 +40,13 @@ describe('lockMessage', () => {
 describe('adviceMessage', () => {
   it('explains that the ceiling buys nothing', () => {
     expect(adviceMessage({ kind: 'wasted-ceiling', attribute: 'strength' })).toBe(
-      'STRENGTH en 15 da el mismo +2 que en 14, y ninguna habilidad pide más de 14: son 2 puntos tirados',
+      'Fuerza en 15 da el mismo +2 que en 14, y ninguna habilidad pide más de 14: son 2 puntos tirados',
     )
   })
 
   it('names the attribute that was pushed', () => {
     expect(adviceMessage({ kind: 'wasted-ceiling', attribute: 'constitution' })).toMatch(
-      /^CONSTITUTION/,
+      /^Constitución/,
     )
   })
 
