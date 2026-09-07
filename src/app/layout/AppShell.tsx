@@ -2,7 +2,6 @@ import { type ReactNode, useState } from 'react'
 import { Outlet } from 'react-router'
 
 import { PromptSlotContext } from './prompt-slot'
-import { useStickToBottom } from './use-stick-to-bottom'
 
 interface AppShellProps {
   children?: ReactNode
@@ -10,12 +9,10 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null)
-  const content = useStickToBottom<HTMLElement>()
 
   return (
-    // `h-full` and not `min-h-full`: the console is exactly the window, and only the
-    // content in the middle scrolls. Letting the page grow instead pushed the prompt
-    // below the fold as soon as a command printed a long answer.
+    // The console is exactly the window and nothing outside a panel ever scrolls: the
+    // header, the prompt and every panel heading stay where the player left them.
     <div className="flex h-full flex-col overflow-hidden bg-background font-mono text-text">
       <a
         href="#console-content"
@@ -29,15 +26,12 @@ export function AppShell({ children }: AppShellProps) {
         <span className="text-xs text-text-dim">consola de duelos</span>
       </header>
 
-      {/* `min-h-0` is what lets a flex child shrink below its content and scroll at all. */}
-      <main
-        id="console-content"
-        ref={content}
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4"
-      >
+      {/* `min-h-0` is what lets a flex child shrink below its content, which is what makes
+          the panels inside give up height instead of pushing the prompt off the screen. */}
+      <main id="console-content" className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4">
         {/* Pins short content to the bottom, next to the prompt, and gets out of the way
-            once there is enough of it to scroll. */}
-        <div className="mt-auto">
+            as soon as there is enough of it to fill the console. */}
+        <div className="mt-auto flex min-h-0 flex-col">
           <PromptSlotContext value={slot}>{children ?? <Outlet />}</PromptSlotContext>
         </div>
       </main>

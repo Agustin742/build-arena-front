@@ -36,7 +36,10 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
   return (
     <CommandRuntimeProvider commands={commands} state={state}>
       <AppShell>
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+        {/* `min-h-0` all the way down, or the messages panel never gets the chance to
+            give up height. Every other box keeps its natural size: the squeeze lands on
+            the one box whose content can be arbitrarily long. */}
+        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-col gap-4">
           <Outlet />
 
           {/* The checklist sits above the question on purpose: what is being asked reads
