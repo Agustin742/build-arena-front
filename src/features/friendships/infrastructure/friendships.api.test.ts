@@ -63,7 +63,10 @@ describe('createFriendshipsApi', () => {
       server.use(
         http.post(`${baseUrl}/friendships`, () =>
           HttpResponse.json(
-            { violations: [{ rule: 'DUPLICATE_REQUEST', message: 'already asked' }] },
+            {
+              message: 'The friend request breaks the rules of the arena',
+              violations: [{ rule: 'DUPLICATE_REQUEST', message: 'already asked' }],
+            },
             { status: 400 },
           ),
         ),
