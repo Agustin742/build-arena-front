@@ -59,6 +59,7 @@ describe('Panel that scrolls its own body', () => {
 
     expect(body).toHaveClass('overflow-y-auto')
     expect(body).toHaveClass('min-h-0')
+    expect(body).toHaveClass('console-scroll')
   })
 
   it('lets the panel shrink instead of pushing what sits below it off the screen', () => {
