@@ -1,16 +1,20 @@
 export type CommandScope =
-  | 'anonymous'
-  | 'lobby'
-  | 'battle'
-  | 'reaction-window'
-  | 'builds'
-  | 'friends'
+  'anonymous' | 'lobby' | 'battle' | 'reaction-window' | 'builds' | 'friends'
 
 /**
  * The menus the console can step into. A menu replaces the lobby while it is open, so
  * every name here is also a scope: `deriveScopes` hands the menu straight through.
  */
 export type CommandMenu = 'builds' | 'friends'
+
+/**
+ * Opening and closing a menu. The store lives in the app layer, so a feature that wants a
+ * menu asks for this instead of reaching for it — and every feature asks the same way.
+ */
+export interface MenuControl {
+  open: (menu: CommandMenu) => void
+  close: () => void
+}
 
 export interface CommandOption {
   id: string

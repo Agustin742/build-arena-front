@@ -8,6 +8,7 @@ import {
   type CommandArg,
   type CommandOption,
   type CommandResult,
+  type MenuControl,
   type ParsedArgs,
 } from '@/shared/commands'
 import { type SkillCatalog } from '@/shared/contracts'
@@ -20,7 +21,7 @@ import { ATTRIBUTE_KEYS } from '../domain/types'
 import { type BuildDraft, type BuildsApi } from '../infrastructure/builds.api'
 import { adviceMessage } from './build-messages'
 import { invalidateBuilds } from './build-queries'
-import { createBuildCrudCommands, type MenuControl } from './builds.crud'
+import { createBuildCrudCommands } from './builds.crud'
 import {
   ATTRIBUTE_GROUP,
   ATTRIBUTE_STEP_LABEL,
