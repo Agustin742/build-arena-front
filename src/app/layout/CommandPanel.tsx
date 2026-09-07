@@ -52,7 +52,7 @@ export function CommandPanel() {
     const menu = ctx.state.menu
 
     return (
-      <Panel title={menu ?? COMMANDS_TITLE} note={COMMANDS_NOTE}>
+      <Panel title={menu ?? COMMANDS_TITLE} note={COMMANDS_NOTE} scroll>
         <CommandListContainer />
       </Panel>
     )
@@ -65,13 +65,11 @@ export function CommandPanel() {
       title={pendingStep.arg.label}
       label={`Opciones: ${pendingStep.arg.label}`}
       note={noteFor(pendingStep)}
+      // The sentence goes in the lead, not in the body: a list of a hundred names has to
+      // scroll, and a question that scrolls out of sight is a question nobody can answer.
+      {...(sentence === undefined ? {} : { lead: <LogLine tone="dim">{sentence}</LogLine> })}
+      scroll
     >
-      {sentence !== undefined && (
-        <div className="mb-2 border-b border-border pb-2">
-          <LogLine tone="dim">{sentence}</LogLine>
-        </div>
-      )}
-
       <CommandListContainer />
     </Panel>
   )
