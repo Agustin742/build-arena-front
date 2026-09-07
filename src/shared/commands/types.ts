@@ -1,7 +1,16 @@
-export type CommandScope = 'anonymous' | 'lobby' | 'battle' | 'reaction-window' | 'builds'
+export type CommandScope =
+  | 'anonymous'
+  | 'lobby'
+  | 'battle'
+  | 'reaction-window'
+  | 'builds'
+  | 'friends'
 
-/** The menus the console can step into. A menu replaces the lobby while it is open. */
-export type CommandMenu = 'builds'
+/**
+ * The menus the console can step into. A menu replaces the lobby while it is open, so
+ * every name here is also a scope: `deriveScopes` hands the menu straight through.
+ */
+export type CommandMenu = 'builds' | 'friends'
 
 export interface CommandOption {
   id: string
