@@ -5,9 +5,9 @@ import {
   type Command,
   type CommandOption,
   type CommandResult,
+  type MenuControl,
   type ParsedArgs,
 } from '@/shared/commands'
-import { type CommandMenu } from '@/shared/commands'
 import { type BuildList, type PublicBuild } from '@/shared/contracts'
 import { ApiError, toGameMessage, toViolationMessages } from '@/shared/http'
 
@@ -15,12 +15,6 @@ import { type BuildsApi } from '../infrastructure/builds.api'
 import { buildDetailLines, buildListLines, buildSummary } from './build-lines'
 import { buildOptions, findBuild } from './build-picker'
 import { cachedBuilds, fetchBuilds, invalidateBuilds } from './build-queries'
-
-/** Opening and closing the console menu. The store lives in the app layer; this only asks. */
-export interface MenuControl {
-  open: (menu: CommandMenu) => void
-  close: () => void
-}
 
 export interface BuildCrudDeps {
   client: QueryClient
