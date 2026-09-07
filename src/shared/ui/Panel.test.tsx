@@ -157,9 +157,9 @@ describe('Panel that scrolls its own body', () => {
     expect(body).toHaveClass('console-scroll')
   })
 
-  it('lets the panel shrink instead of pushing what sits below it off the screen', () => {
+  it('lets the growing panel shrink instead of pushing what sits below it off the screen', () => {
     render(
-      <Panel title="acción 1" scroll>
+      <Panel title="acción 1" scroll grow>
         <p>una opción</p>
       </Panel>,
     )
