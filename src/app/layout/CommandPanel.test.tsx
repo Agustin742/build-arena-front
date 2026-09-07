@@ -109,6 +109,18 @@ describe('CommandPanel', () => {
 
     expect(screen.getByText(/esc para cancelar/)).toBeInTheDocument()
   })
+
+  it('scrolls a list of options instead of running it off the console', () => {
+    renderPanel(step({ label: 'A quién' }))
+
+    expect(screen.getByRole('region', { name: 'Opciones: A quién' })).toHaveClass('min-h-0')
+  })
+
+  it('scrolls the command list too, because a menu can outgrow the console as well', () => {
+    renderPanel(null)
+
+    expect(screen.getByRole('region', { name: 'comandos' })).toHaveClass('min-h-0')
+  })
 })
 
 function step(
