@@ -1,5 +1,5 @@
 import { useCommandRuntime } from '@/app/providers/command-runtime'
-import { type CommandArg, type ParsedArgs } from '@/shared/commands'
+import { type CommandArg, type CommandContext, type ParsedArgs } from '@/shared/commands'
 import { Panel } from '@/shared/ui'
 
 const MASK = '••••••'
@@ -26,14 +26,26 @@ function stateOf(arg: CommandArg, values: ParsedArgs, awaiting: string): StepSta
   return values[arg.name] === undefined ? 'ahead' : 'done'
 }
 
-function answerOf(arg: CommandArg, values: ParsedArgs): string | undefined {
+/**
+ * The answer as the player saw it, not as it travels. A kit step stores POWER_STRIKE and
+ * showed "Golpe potente"; echoing the code back would undo the naming the list just did.
+ * Resolved through the very options that produced the answer, so there is no second table
+ * to keep in step.
+ */
+function answerOf(arg: CommandArg, values: ParsedArgs, ctx: CommandContext): string | undefined {
   const value = values[arg.name]
 
   if (value === undefined) {
     return undefined
   }
 
-  return arg.kind === 'password' ? MASK : value
+  if (arg.kind === 'password') {
+    return MASK
+  }
+
+  const option = arg.options?.(ctx, values).find((candidate) => candidate.id === value)
+
+  return option?.label ?? value
 }
 
 /**
@@ -42,7 +54,7 @@ function answerOf(arg: CommandArg, values: ParsedArgs): string | undefined {
  * already decided, and there is no way back to check.
  */
 export function CommandChecklist() {
-  const { pending, registry } = useCommandRuntime()
+  const { ctx, pending, registry } = useCommandRuntime()
 
   if (pending === null) {
     return null
@@ -59,7 +71,7 @@ export function CommandChecklist() {
       <ol className="flex flex-col">
         {command.args.map((arg) => {
           const state = stateOf(arg, pending.values, pending.awaiting)
-          const answer = answerOf(arg, pending.values)
+          const answer = answerOf(arg, pending.values, ctx)
 
           return (
             <li
