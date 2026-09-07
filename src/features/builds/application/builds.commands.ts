@@ -21,10 +21,15 @@ import { type BuildDraft, type BuildsApi } from '../infrastructure/builds.api'
 import { adviceMessage } from './build-messages'
 import { invalidateBuilds } from './build-queries'
 import {
+  ATTRIBUTE_GROUP,
   ATTRIBUTE_STEP_LABEL,
+  ATTRIBUTE_STEP_PROMPT,
+  attributeBudgetNote,
   attributeOptions,
   chosenSkills,
+  KIT_GROUP,
   KIT_STEPS,
+  kitBudgetNote,
   skillOptions,
   spreadFrom,
 } from './wizard-steps'
@@ -67,7 +72,10 @@ function wizardArgs(catalogOf: () => SkillCatalog): CommandArg[] {
     name: attribute,
     kind: 'pick',
     label: ATTRIBUTE_STEP_LABEL[attribute],
+    prompt: ATTRIBUTE_STEP_PROMPT[attribute],
+    group: ATTRIBUTE_GROUP,
     required: true,
+    describe: (values) => attributeBudgetNote(values, attribute),
     options: (_ctx, values) => attributeOptions(values, attribute),
   }))
 
@@ -75,18 +83,28 @@ function wizardArgs(catalogOf: () => SkillCatalog): CommandArg[] {
     name: step.name,
     kind: 'pick',
     label: step.label,
+    prompt: step.prompt,
+    group: KIT_GROUP,
     required: true,
+    describe: (values) => kitBudgetNote(catalogOf(), values, step.name),
     options: (_ctx, values) => skillOptions(catalogOf(), values, step.type),
   }))
 
   return [
-    { name: 'name', kind: 'text', label: 'Nombre', required: true },
+    {
+      name: 'name',
+      kind: 'text',
+      label: 'Nombre',
+      prompt: 'Poné un nombre a la build, de 3 a 40 caracteres',
+      required: true,
+    },
     ...attributes,
     ...kit,
     {
       name: 'confirm',
       kind: 'pick',
       label: '¿Guardamos?',
+      prompt: 'Revisá la build antes de guardarla',
       required: true,
       options: (_ctx, values) => confirmOptions(catalogOf(), values),
     },
