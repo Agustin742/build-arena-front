@@ -30,10 +30,7 @@ describe('AppRoutes', () => {
 
   it.each([
     ['/', 'lobby'],
-    ['/friends', 'friends'],
-    ['/battles', 'battles'],
     ['/battles/42', 'arena'],
-    ['/leaderboard', 'leaderboard'],
   ])('renders the %s screen to a player with a session', (path, screenName) => {
     useSessionStore.getState().setTokens(pair)
 
@@ -44,10 +41,7 @@ describe('AppRoutes', () => {
 
   it.each([
     ['/', 'lobby'],
-    ['/friends', 'friends'],
-    ['/battles', 'battles'],
     ['/battles/42', 'arena'],
-    ['/leaderboard', 'leaderboard'],
   ])('sends an anonymous visitor from %s to the way in', (path, screenName) => {
     renderAt(path)
 
@@ -58,9 +52,9 @@ describe('AppRoutes', () => {
   it('keeps the console on every screen behind the session', () => {
     useSessionStore.getState().setTokens(pair)
 
-    renderAt('/leaderboard')
+    renderAt('/battles/42')
 
-    expect(screen.getByRole('heading', { name: 'leaderboard' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'arena' })).toBeInTheDocument()
     expect(screen.getByText('LOGOUT')).toBeInTheDocument()
     expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
@@ -83,15 +77,20 @@ describe('AppRoutes', () => {
   it('keeps the app shell around every screen', () => {
     useSessionStore.getState().setTokens(pair)
 
-    renderAt('/leaderboard')
+    renderAt('/')
 
     expect(screen.getByRole('banner')).toHaveTextContent('build arena')
   })
 })
 
-describe('the routes builds used to have', () => {
-  it.each(['/builds', '/builds/new', '/builds/42'])(
-    'sends %s to the not found screen, because builds live in the console now',
+/**
+ * Every one of these was a placeholder from phase 0 promising a screen. Builds, friends,
+ * battles and the ranking all ended up as commands instead, so the promise is withdrawn
+ * rather than left standing.
+ */
+describe('the routes that never became screens', () => {
+  it.each(['/builds', '/builds/new', '/builds/42', '/friends', '/battles', '/leaderboard'])(
+    'sends %s to the not found screen, because that lives in the console now',
     (path) => {
       useSessionStore.getState().setTokens(pair)
 
