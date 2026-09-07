@@ -74,6 +74,7 @@ function renderResult(lastResult: CommandResult | null) {
     },
     registry: createCommandRegistry([]),
     pending: null,
+    pendingStep: null,
     promptError: undefined,
     lastResult,
     selectItem: () => undefined,

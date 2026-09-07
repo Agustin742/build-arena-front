@@ -7,6 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { gameCommands } from '@/app/boot/game-commands'
 import { queryClient } from '@/app/boot/query-client'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
+import { SKILLS_QUERY_KEY } from '@/features/skills'
+import { type PublicSkill, type SkillCatalog } from '@/shared/contracts'
 import { server } from '@/test/msw/server'
 
 import { ConsoleLayout } from './ConsoleLayout'
@@ -23,32 +25,63 @@ const profile = {
 
 const pair = { accessToken: 'access-1', refreshToken: 'refresh-1' }
 
-const catalog = [
-  {
-    code: 'POWER_STRIKE',
-    name: 'Golpe potente',
-    description: 'Un mandoble que abre la guardia',
-    type: 'ACTION',
-    cost: 4,
-    requiredAttribute: 'STRENGTH',
-    requiredValue: 12,
-    damageDice: '1d8',
-    appliesCondition: null,
-    conditionRounds: null,
-  },
-  {
-    code: 'BRACE',
-    name: 'Aguantar',
-    description: 'Planta los pies y encaja',
+function reaction(
+  code: string,
+  requiredAttribute: PublicSkill['requiredAttribute'],
+  requiredValue: number,
+  cost: number,
+): PublicSkill {
+  return {
+    code,
+    name: code,
+    description: 'una habilidad del catálogo',
     type: 'REACTION',
-    cost: 3,
-    requiredAttribute: 'CONSTITUTION',
-    requiredValue: 12,
+    cost,
+    requiredAttribute,
+    requiredValue,
     damageDice: null,
     appliesCondition: null,
     conditionRounds: null,
-  },
+  }
+}
+
+function action(
+  code: string,
+  requiredAttribute: PublicSkill['requiredAttribute'],
+  requiredValue: number,
+  cost: number,
+): PublicSkill {
+  return {
+    ...reaction(code, requiredAttribute, requiredValue, cost),
+    type: 'ACTION',
+    damageDice: '1d8',
+  }
+}
+
+/** PRECISE_SHOT is here to stay locked: the 12 dexterity of the wizard never reaches 13. */
+const catalog: SkillCatalog = [
+  action('POWER_STRIKE', 'STRENGTH', 12, 4),
+  action('FIREBALL', 'MAGIC', 12, 5),
+  action('PRECISE_SHOT', 'DEXTERITY', 13, 4),
+  reaction('BRACE', 'CONSTITUTION', 12, 3),
+  reaction('PARRY', 'STRENGTH', 12, 4),
 ]
+
+const createdBuild = {
+  id: '7c3f1a92-8d4e-4b6a-9f21-0e5d8c7b6a34',
+  name: 'Duelista',
+  strength: 12,
+  magic: 14,
+  dexterity: 12,
+  constitution: 12,
+  skills: [],
+  createdAt: '2026-09-06T10:15:00.000Z',
+  updatedAt: '2026-09-06T10:15:00.000Z',
+}
+
+async function answer(raw: string) {
+  await userEvent.type(screen.getByRole('textbox'), `${raw}{Enter}`)
+}
 
 function renderConsole(path = '/lobby') {
   return render(
@@ -221,5 +254,115 @@ describe('ConsoleLayout', () => {
     renderConsole()
 
     expect(screen.queryByText('SKILLS')).not.toBeInTheDocument()
+  })
+  it('walks a build through the wizard and lands it in the arena', async () => {
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    const posted = vi.fn()
+    server.use(
+      http.post(`${baseUrl}/builds`, async ({ request }) => {
+        posted(await request.json())
+        return HttpResponse.json(createdBuild, { status: 201 })
+      }),
+    )
+    renderConsole()
+
+    await answer('build new')
+    await answer('Duelista')
+    await answer('12')
+    await answer('14')
+    await answer('12')
+    await answer('12')
+    await answer('POWER_STRIKE')
+    await answer('FIREBALL')
+    await answer('BRACE')
+    await answer('PARRY')
+    await answer('1')
+
+    expect(await screen.findByText(/Duelista.*creada/)).toBeInTheDocument()
+    expect(posted).toHaveBeenCalledWith({
+      name: 'Duelista',
+      strength: 12,
+      magic: 14,
+      dexterity: 12,
+      constitution: 12,
+      skillCodes: ['POWER_STRIKE', 'FIREBALL', 'BRACE', 'PARRY'],
+    })
+  })
+
+  it('says exactly what a locked skill is missing, and by how much', async () => {
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    renderConsole()
+
+    await answer('build new')
+    await answer('Duelista')
+    await answer('12')
+    await answer('14')
+    await answer('12')
+    await answer('12')
+
+    expect(screen.getByText('necesita DEXTERITY 13, tenés 12')).toBeInTheDocument()
+  })
+
+  it('refuses a locked skill typed by name, the same as clicking it', async () => {
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    renderConsole()
+
+    await answer('build new')
+    await answer('Duelista')
+    await answer('12')
+    await answer('14')
+    await answer('12')
+    await answer('12')
+    await answer('PRECISE_SHOT')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('necesita DEXTERITY 13, tenés 12')
+  })
+
+  it('renders every violation the arena answers with, not just the first', async () => {
+    useSessionStore.getState().setTokens(pair)
+    queryClient.setQueryData(SKILLS_QUERY_KEY, catalog)
+    server.use(
+      http.post(`${baseUrl}/builds`, () =>
+        HttpResponse.json(
+          {
+            message: 'The build breaks the rules of the arena',
+            violations: [
+              { rule: 'ATTRIBUTE_BUDGET_EXCEEDED', message: 'The spread costs 24' },
+              { rule: 'KIT_BUDGET_EXCEEDED', message: 'The kit costs 21' },
+            ],
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderConsole()
+
+    await answer('build new')
+    await answer('Duelista')
+    await answer('12')
+    await answer('14')
+    await answer('12')
+    await answer('12')
+    await answer('POWER_STRIKE')
+    await answer('FIREBALL')
+    await answer('BRACE')
+    await answer('PARRY')
+    await answer('1')
+
+    const alert = await screen.findByRole('alert')
+
+    expect(alert).toHaveTextContent('La arena rechazó la build')
+    expect(alert).toHaveTextContent('El reparto de atributos se pasa del presupuesto de 20 puntos')
+    expect(alert).toHaveTextContent('El kit se pasa del presupuesto de 18 puntos')
+  })
+
+  it('holds the wizard shut while the catalog is still on its way', () => {
+    useSessionStore.getState().setTokens(pair)
+    renderConsole()
+
+    expect(screen.getByText('el catálogo todavía no llegó')).toBeInTheDocument()
   })
 })

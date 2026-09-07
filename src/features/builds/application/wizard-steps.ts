@@ -7,9 +7,10 @@ import {
   ATTRIBUTE_MAX,
   attributeCost,
   isAttributeValue,
+  modifier,
   toAttributeSpread,
 } from '../domain/attribute-cost'
-import { lockFor } from '../domain/kit'
+import { KIT_BUDGET, kitCost, lockFor } from '../domain/kit'
 import {
   ATTRIBUTE_KEYS,
   type AttributeKey,
@@ -26,18 +27,70 @@ export const ATTRIBUTE_STEP_LABEL: Readonly<Record<AttributeKey, string>> = {
   constitution: 'Constitución',
 }
 
+/** The sentence each step opens with. The label names it; this says what it is asking. */
+export const ATTRIBUTE_STEP_PROMPT: Readonly<Record<AttributeKey, string>> = {
+  strength: 'Elegí tu nivel de fuerza',
+  magic: 'Elegí tu nivel de magia',
+  dexterity: 'Elegí tu nivel de destreza',
+  constitution: 'Elegí tu nivel de constitución',
+}
+
+export const ATTRIBUTE_GROUP = 'atributo'
+export const KIT_GROUP = 'habilidad'
+
+/** What is left of the attribute budget with the answers given so far. */
+export function attributeBudgetNote(values: ParsedArgs, answering: AttributeKey): string {
+  const left = ATTRIBUTE_BUDGET - spentOnOthers(values, answering)
+
+  return `te quedan ${String(left)} de ${String(ATTRIBUTE_BUDGET)} puntos`
+}
+
+/** What is left of the kit budget, counting only the skills already picked. */
+export function kitBudgetNote(
+  catalog: SkillCatalog,
+  values: ParsedArgs,
+  answering: string,
+): string {
+  const spent = kitCost(
+    chosenSkills(catalog, values).filter((skill) => skill.code !== values[answering]),
+  )
+
+  return `te quedan ${String(KIT_BUDGET - spent)} de ${String(KIT_BUDGET)} puntos del kit`
+}
+
 export interface KitStep {
   name: string
   type: SkillKind
   label: string
+  prompt: string
 }
 
 /** Actions first, so the kit budget is spent on what the build does before how it answers. */
 export const KIT_STEPS: readonly KitStep[] = [
-  { name: 'action1', type: 'ACTION', label: 'Acción 1' },
-  { name: 'action2', type: 'ACTION', label: 'Acción 2' },
-  { name: 'reaction1', type: 'REACTION', label: 'Reacción 1' },
-  { name: 'reaction2', type: 'REACTION', label: 'Reacción 2' },
+  {
+    name: 'action1',
+    type: 'ACTION',
+    label: 'Acción 1',
+    prompt: 'Elegí tu primera acción de ataque',
+  },
+  {
+    name: 'action2',
+    type: 'ACTION',
+    label: 'Acción 2',
+    prompt: 'Elegí tu segunda acción de ataque',
+  },
+  {
+    name: 'reaction1',
+    type: 'REACTION',
+    label: 'Reacción 1',
+    prompt: 'Elegí con qué respondés a un ataque',
+  },
+  {
+    name: 'reaction2',
+    type: 'REACTION',
+    label: 'Reacción 2',
+    prompt: 'Elegí tu segunda respuesta a un ataque',
+  },
 ]
 
 const ATTRIBUTE_VALUES: readonly AttributeValue[] = Array.from(
@@ -66,6 +119,10 @@ function spentOnOthers(values: ParsedArgs, answering: AttributeKey): number {
   }, 0)
 }
 
+function signed(value: number): string {
+  return value < 0 ? String(value) : `+${String(value)}`
+}
+
 function missingPoints(short: number): string {
   return short === 1 ? 'te faltan 1 punto' : `te faltan ${String(short)} puntos`
 }
@@ -87,7 +144,9 @@ export function attributeOptions(values: ParsedArgs, answering: AttributeKey): C
       id: label,
       key: label,
       label,
-      hint: `costo ${String(cost)} · restan ${String(Math.max(remaining, 0))}`,
+      // The modifier comes first because it is what the point actually buys. Reading the
+      // column top to bottom shows 14 and 15 sharing a +2, which is the whole warning.
+      hint: `mod ${signed(modifier(value))} · costo ${String(cost)} · restan ${String(Math.max(remaining, 0))}`,
       ...(remaining < 0 ? { lockedReason: missingPoints(-remaining) } : {}),
     }
   })

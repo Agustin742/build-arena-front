@@ -17,8 +17,24 @@ export interface CommandOption {
 export interface CommandArg {
   name: string
   kind: 'text' | 'password' | 'number' | 'pick'
+  /** The short name of the step, for the checklist and the input. */
   label: string
   required: boolean
+  /**
+   * What the step is actually asking, in a sentence. A label names a step; it does not
+   * explain it, and a column of numbers under the word "Fuerza" explains nothing.
+   */
+  prompt?: string | undefined
+  /**
+   * The set this step belongs to, as a singular noun. Steps sharing one are counted
+   * together, so the player reads "atributo 1 de 4" instead of "paso 2 de 10".
+   */
+  group?: string | undefined
+  /**
+   * A line that depends on the answers so far: what is left of a budget, what the build
+   * looks like at this point. Recomputed every time the step is drawn.
+   */
+  describe?: ((values: ParsedArgs) => string) | undefined
   /**
    * `values` carries the answers already given to this same command. A guided wizard
    * needs them: the kit can only be filtered by the attributes the player just chose.

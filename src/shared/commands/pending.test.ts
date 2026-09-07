@@ -238,7 +238,7 @@ describe('advance over a pick argument', () => {
     expect(seen).toHaveBeenCalledWith(ctx, { name: 'ágil' })
   })
 
-  it('takes a typed value on a pick argument without consulting the options', () => {
+  it('lets a typed value the list never offered through, because the arena decides', () => {
     const command = makeKitCommand([open])
     const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
 
@@ -247,6 +247,32 @@ describe('advance over a pick argument', () => {
       command,
       args: { name: 'ágil', action: 'FIREBALL' },
     })
+  })
+
+  it('takes a typed value that names an open option', () => {
+    const command = makeKitCommand([open, locked])
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+
+    expect(advance(command, pending, { kind: 'value', raw: 'POWER_STRIKE' }, contextFor())).toEqual(
+      {
+        kind: 'filled',
+        command,
+        args: { name: 'ágil', action: 'POWER_STRIKE' },
+      },
+    )
+  })
+
+  it('refuses a typed value that names a locked option, the same as clicking it', () => {
+    const command = makeKitCommand([open, locked])
+    const pending = { commandId: 'build-new', values: { name: 'ágil' }, awaiting: 'action' }
+
+    expect(advance(command, pending, { kind: 'value', raw: 'PRECISE_SHOT' }, contextFor())).toEqual(
+      {
+        kind: 'invalid',
+        pending,
+        reason: 'necesita DEXTERITY 13, tenés 12',
+      },
+    )
   })
 
   it('takes a pick on an argument that offers no options at all', () => {

@@ -301,4 +301,70 @@ describe('CommandRuntimeProvider', () => {
     expect(latestOf(seen).promptError).toBe('necesita DEXTERITY 13, tenes 12')
     expect(latestOf(seen).pending?.awaiting).toBe('skill')
   })
+  it('reports no step while the console waits for a command', () => {
+    const seen: CommandRuntime[] = []
+
+    render(
+      <CommandRuntimeProvider commands={[makeWizard()]} state={lobbyState}>
+        <Probe
+          onRuntime={(runtime) => {
+            seen.push(runtime)
+          }}
+        />
+      </CommandRuntimeProvider>,
+    )
+
+    expect(latestOf(seen).pendingStep).toBeNull()
+  })
+
+  it('names the step it is asking about, and where it sits in the wizard', async () => {
+    const seen: CommandRuntime[] = []
+
+    render(
+      <CommandRuntimeProvider commands={[makeWizard()]} state={lobbyState}>
+        <Probe
+          onRuntime={(runtime) => {
+            seen.push(runtime)
+          }}
+        />
+      </CommandRuntimeProvider>,
+    )
+
+    await runAlias(seen, 'build new')
+
+    expect(latestOf(seen).pendingStep).toMatchObject({
+      index: 1,
+      total: 2,
+      arg: { name: 'name', kind: 'text', label: 'Nombre', required: true },
+    })
+  })
+
+  it('moves the step forward as the answers land', async () => {
+    const seen: CommandRuntime[] = []
+
+    render(
+      <CommandRuntimeProvider commands={[makeWizard()]} state={lobbyState}>
+        <Probe
+          onRuntime={(runtime) => {
+            seen.push(runtime)
+          }}
+        />
+      </CommandRuntimeProvider>,
+    )
+
+    await runAlias(seen, 'build new')
+    await act(async () => {
+      latestOf(seen).submitText('agil', undefined)
+      await Promise.resolve()
+    })
+
+    const step = latestOf(seen).pendingStep
+
+    expect({ index: step?.index, total: step?.total, name: step?.arg.name }).toEqual({
+      index: 2,
+      total: 2,
+      name: 'skill',
+    })
+    expect(step?.arg.label).toBe('Habilidad')
+  })
 })

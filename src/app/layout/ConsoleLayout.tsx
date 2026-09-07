@@ -1,14 +1,14 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router'
 
-import { CommandListContainer } from '@/app/layout/CommandListContainer'
+import { CommandChecklist } from '@/app/layout/CommandChecklist'
+import { CommandPanel } from '@/app/layout/CommandPanel'
 import { CommandPromptContainer } from '@/app/layout/CommandPromptContainer'
 import { CommandResultLine } from '@/app/layout/CommandResultLine'
-import { CommandTranscript } from '@/app/layout/CommandTranscript'
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { type Command, type CommandState } from '@/shared/commands'
-import { Countdown, Panel } from '@/shared/ui'
+import { Countdown } from '@/shared/ui'
 
 import { AppShell } from './AppShell'
 
@@ -39,12 +39,12 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
           <Outlet />
 
-          <Panel title="comandos" note="escribí el comando o su número">
-            <CommandListContainer />
-          </Panel>
+          {/* The checklist sits above the question on purpose: what is being asked reads
+              next to what was already answered and what is still ahead. */}
+          <CommandChecklist />
+          <CommandPanel />
 
           <CommandResultLine />
-          <CommandTranscript />
 
           {lockedUntil !== null && (
             <Countdown key={lockedUntil} remainingMs={windowMs} onExpire={release} label="Espera" />
