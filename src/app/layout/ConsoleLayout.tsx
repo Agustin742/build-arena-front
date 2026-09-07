@@ -6,6 +6,7 @@ import { CommandPanel } from '@/app/layout/CommandPanel'
 import { CommandPromptContainer } from '@/app/layout/CommandPromptContainer'
 import { CommandResultLine } from '@/app/layout/CommandResultLine'
 import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
+import { useMenuStore } from '@/app/providers/menu.store'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { type Command, type CommandState } from '@/shared/commands'
 import { Countdown } from '@/shared/ui'
@@ -20,6 +21,8 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
   const accessToken = useSessionStore((session) => session.accessToken)
   const refreshToken = useSessionStore((session) => session.refreshToken)
 
+  const menu = useMenuStore((state) => state.menu)
+
   const lockedUntil = useThrottleStore((throttle) => throttle.lockedUntil)
   const release = useThrottleStore((throttle) => throttle.release)
   const windowMs = useThrottleStore((throttle) => throttle.windowMs)
@@ -29,8 +32,9 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
       isAuthenticated: accessToken !== null && refreshToken !== null,
       battleId: null,
       reactionWindowOpen: false,
+      menu,
     }),
-    [accessToken, refreshToken],
+    [accessToken, menu, refreshToken],
   )
 
   return (

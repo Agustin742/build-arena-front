@@ -44,11 +44,15 @@ function sentenceOf(step: PendingStep, values: ParsedArgs): string | undefined {
 }
 
 export function CommandPanel() {
-  const { pendingStep, pending } = useCommandRuntime()
+  const { pendingStep, pending, ctx } = useCommandRuntime()
 
   if (pendingStep === null) {
+    // Inside a menu the heading says which one. A list of four commands under the word
+    // "comandos" gives the player no way to tell they stepped into anything.
+    const menu = ctx.state.menu
+
     return (
-      <Panel title={COMMANDS_TITLE} note={COMMANDS_NOTE}>
+      <Panel title={menu ?? COMMANDS_TITLE} note={COMMANDS_NOTE}>
         <CommandListContainer />
       </Panel>
     )

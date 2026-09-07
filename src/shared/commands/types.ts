@@ -1,4 +1,7 @@
-export type CommandScope = 'anonymous' | 'lobby' | 'battle' | 'reaction-window'
+export type CommandScope = 'anonymous' | 'lobby' | 'battle' | 'reaction-window' | 'builds'
+
+/** The menus the console can step into. A menu replaces the lobby while it is open. */
+export type CommandMenu = 'builds'
 
 export interface CommandOption {
   id: string
@@ -59,6 +62,11 @@ export interface CommandState {
   isAuthenticated: boolean
   battleId: string | null
   reactionWindowOpen: boolean
+  /**
+   * Where the console has stepped into, if anywhere. Optional because most of the app
+   * never leaves the lobby, and a menu is a convenience, not a place the game knows about.
+   */
+  menu?: CommandMenu | null | undefined
 }
 
 export interface NumberedItem {

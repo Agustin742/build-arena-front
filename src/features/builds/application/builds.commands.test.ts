@@ -72,11 +72,11 @@ const CREATED = {
 
 describe('createBuildsCommands', () => {
   describe('the command itself', () => {
-    it('registers the wizard in the lobby', () => {
+    it('registers the wizard inside the builds menu, not in the lobby', () => {
       expect(wizard()).toMatchObject({
         id: 'build-new',
         aliases: ['build new'],
-        scope: ['lobby'],
+        scope: ['builds'],
       })
     })
 
@@ -96,8 +96,8 @@ describe('createBuildsCommands', () => {
     })
 
     it('waits for the catalog instead of offering a wizard it cannot fill', () => {
-      const { client, api } = deps({ withCatalog: false })
-      const [command] = createBuildsCommands({ client, api })
+      const { client, api, menu } = deps({ withCatalog: false })
+      const [command] = createBuildsCommands({ client, api, menu })
 
       expect(command?.availability(ctx())).toEqual({
         enabled: false,
@@ -228,9 +228,9 @@ describe('createBuildsCommands', () => {
 
   describe('running the wizard', () => {
     it('posts the draft the player assembled', async () => {
-      const { client, api, create } = deps()
+      const { client, api, create, menu } = deps()
 
-      await createBuildsCommands({ client, api })[0]?.run(ANSWERS, ctx())
+      await createBuildsCommands({ client, api, menu })[0]?.run(ANSWERS, ctx())
 
       expect(create).toHaveBeenCalledWith({
         name: 'Duelista híbrido',
@@ -250,29 +250,32 @@ describe('createBuildsCommands', () => {
     })
 
     it('sends the next listing back to the arena, which the endless cache would not', async () => {
-      const { client, api, list } = deps()
+      const { client, api, list, menu } = deps()
       await fetchBuilds(client, api)
 
-      await createBuildsCommands({ client, api })[0]?.run(ANSWERS, ctx())
+      await createBuildsCommands({ client, api, menu })[0]?.run(ANSWERS, ctx())
       await fetchBuilds(client, api)
 
       expect(list).toHaveBeenCalledTimes(2)
     })
 
     it('leaves the cached listing alone when nothing was created', async () => {
-      const { client, api, list } = deps()
+      const { client, api, list, menu } = deps()
       await fetchBuilds(client, api)
 
-      await createBuildsCommands({ client, api })[0]?.run({ ...ANSWERS, confirm: 'no' }, ctx())
+      await createBuildsCommands({ client, api, menu })[0]?.run(
+        { ...ANSWERS, confirm: 'no' },
+        ctx(),
+      )
       await fetchBuilds(client, api)
 
       expect(list).toHaveBeenCalledTimes(1)
     })
 
     it('discards the build when the player says no, without asking the arena', async () => {
-      const { client, api, create } = deps()
+      const { client, api, create, menu } = deps()
 
-      const result = await createBuildsCommands({ client, api })[0]?.run(
+      const result = await createBuildsCommands({ client, api, menu })[0]?.run(
         { ...ANSWERS, confirm: 'no' },
         ctx(),
       )
@@ -365,13 +368,14 @@ function deps({ withCatalog = true } = {}) {
   const create = vi.fn<BuildsApi['create']>().mockResolvedValue(CREATED)
   const list = vi.fn<BuildsApi['list']>().mockResolvedValue([])
   const api = { create, list } as unknown as BuildsApi
+  const menu = { open: vi.fn(), close: vi.fn() }
 
-  return { client, api, create, list }
+  return { client, api, create, list, menu }
 }
 
 function wizard() {
-  const { client, api } = deps()
-  const [command] = createBuildsCommands({ client, api })
+  const { client, api, menu } = deps()
+  const [command] = createBuildsCommands({ client, api, menu })
 
   if (command === undefined) {
     throw new Error('the wizard was not registered')
@@ -391,13 +395,13 @@ function optionsOf(argName: string, values: ParsedArgs) {
 }
 
 async function run(values: ParsedArgs, failure?: ApiError): Promise<CommandResult> {
-  const { client, api, create } = deps()
+  const { client, api, create, menu } = deps()
 
   if (failure !== undefined) {
     create.mockRejectedValue(failure)
   }
 
-  const result = await createBuildsCommands({ client, api })[0]?.run(values, ctx())
+  const result = await createBuildsCommands({ client, api, menu })[0]?.run(values, ctx())
 
   if (result === undefined) {
     throw new Error('the wizard was not registered')

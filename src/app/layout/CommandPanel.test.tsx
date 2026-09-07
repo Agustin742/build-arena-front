@@ -8,6 +8,7 @@ import {
 } from '@/app/providers/command-runtime'
 import {
   type CommandArg,
+  type CommandMenu,
   createCommandRegistry,
   EMPTY_NUMBERED_LIST,
   type ParsedArgs,
@@ -122,14 +123,18 @@ function step(
   }
 }
 
-function renderPanel(pendingStep: PendingStep | null, values: ParsedArgs = {}) {
+function renderPanel(
+  pendingStep: PendingStep | null,
+  values: ParsedArgs = {},
+  menu: CommandMenu | null = null,
+) {
   const withGroup = pendingStep
 
   const runtime: CommandRuntime = {
     ctx: {
       activeScopes: ['lobby'],
       picks: EMPTY_NUMBERED_LIST,
-      state: { isAuthenticated: true, battleId: null, reactionWindowOpen: false },
+      state: { isAuthenticated: true, battleId: null, reactionWindowOpen: false, menu },
     },
     registry: createCommandRegistry([]),
     pending: withGroup === null ? null : { commandId: 'build-new', values, awaiting: 'field' },
@@ -147,3 +152,30 @@ function renderPanel(pendingStep: PendingStep | null, values: ParsedArgs = {}) {
     </CommandRuntimeContext>,
   )
 }
+
+describe('CommandPanel inside a menu', () => {
+  it('names the menu the console stepped into, instead of the word comandos', () => {
+    renderPanel(null, {}, 'builds')
+
+    expect(screen.getByRole('heading')).toHaveTextContent('builds')
+    expect(screen.getByRole('heading')).not.toHaveTextContent('comandos')
+  })
+
+  it('still says how to answer, because the list works the same in here', () => {
+    renderPanel(null, {}, 'builds')
+
+    expect(screen.getByText('escribí el comando o su número')).toBeInTheDocument()
+  })
+
+  it('says comandos again once the console steps back out', () => {
+    renderPanel(null, {}, null)
+
+    expect(screen.getByRole('heading')).toHaveTextContent('comandos')
+  })
+
+  it('lets the open step outrank the menu, it is the more immediate question', () => {
+    renderPanel(step({ label: 'Fuerza' }), {}, 'builds')
+
+    expect(screen.getByRole('heading')).toHaveTextContent('Fuerza')
+  })
+})
