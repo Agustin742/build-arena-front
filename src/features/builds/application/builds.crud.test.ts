@@ -18,8 +18,47 @@ const MAGE = build({ id: 'id-mage', name: 'Duelista híbrido', magic: 14 })
 const BRUTE = build({ id: 'id-brute', name: 'Bruto', strength: 14 })
 const BUILDS: BuildList = [MAGE, BRUTE]
 
+describe('the shape of the builds menu', () => {
+  it('shows one door in the lobby, not four', () => {
+    const lobby = createBuildsCommands(harness())
+      .filter((command) => command.scope.includes('lobby'))
+      .map((command) => command.id)
+
+    expect(lobby).toEqual(['builds'])
+  })
+
+  it('keeps everything about builds behind that door', () => {
+    const inside = createBuildsCommands(harness())
+      .filter((command) => command.scope.includes('builds'))
+      .map((command) => command.id)
+
+    expect(inside).toEqual(['build-new', 'build-show', 'build-rename', 'build-rm', 'build-back'])
+  })
+
+  it('opens the menu when the player walks in', async () => {
+    const deps = harness()
+    await commandFrom(deps, 'builds').run({}, ctx())
+
+    expect(deps.opened).toHaveBeenCalledWith('builds')
+  })
+
+  it('closes it on the way out', async () => {
+    const deps = harness()
+    await commandFrom(deps, 'back').run({}, ctx())
+
+    expect(deps.closed).toHaveBeenCalled()
+  })
+
+  it('does not step into the menu when the arena would not answer anyway', async () => {
+    const deps = harness({ failure: offline() })
+    await commandFrom(deps, 'builds').run({}, ctx())
+
+    expect(deps.opened).not.toHaveBeenCalled()
+  })
+})
+
 describe('the builds listing command', () => {
-  it('lives in the lobby and answers to builds', () => {
+  it('is the door into the menu, and it takes no arguments', () => {
     expect(commandNamed('builds')).toMatchObject({
       aliases: ['builds'],
       scope: ['lobby'],
@@ -235,14 +274,23 @@ function harness({ builds = BUILDS, failure, updateFailure, removeFailure }: Run
 
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const api = { create: vi.fn(), list, get: vi.fn(), update, remove } as unknown as BuildsApi
+  const opened = vi.fn()
+  const closed = vi.fn()
 
-  return { client, api, list, update, remove }
+  return {
+    client,
+    api,
+    list,
+    update,
+    remove,
+    opened,
+    closed,
+    menu: { open: opened, close: closed },
+  }
 }
 
 function commandFrom(deps: ReturnType<typeof harness>, alias: string): Command {
-  const found = createBuildsCommands({ client: deps.client, api: deps.api }).find((command) =>
-    command.aliases.includes(alias),
-  )
+  const found = createBuildsCommands(deps).find((command) => command.aliases.includes(alias))
 
   if (found === undefined) {
     throw new Error(`no hay comando ${alias}`)
