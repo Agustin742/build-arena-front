@@ -472,6 +472,73 @@ describe('ConsoleLayout', () => {
     expect(screen.getByText(/ada\s+1200\s+· vos/)).toBeInTheDocument()
   })
 
+  it('walks the console into the friends menu and accepts what was waiting there', async () => {
+    const accepted = vi.fn()
+    const incoming = {
+      id: 'c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
+      status: 'PENDING',
+      direction: 'INCOMING',
+      player: rival,
+      createdAt: '2026-09-07T10:15:00.000Z',
+      updatedAt: '2026-09-07T10:15:00.000Z',
+    }
+    useSessionStore.getState().setTokens(pair)
+    server.use(
+      http.get(`${baseUrl}/friendships`, () => HttpResponse.json([incoming])),
+      http.get(`${baseUrl}/leaderboard`, () => HttpResponse.json([])),
+      http.patch(`${baseUrl}/friendships/${incoming.id}/accept`, () => {
+        accepted()
+        return HttpResponse.json({ ...incoming, status: 'ACCEPTED' })
+      }),
+    )
+    renderConsole()
+
+    await answer('friends')
+
+    expect(await screen.findByText('TE MANDARON SOLICITUD')).toBeInTheDocument()
+    expect(screen.getByText('FRIEND OK')).toBeInTheDocument()
+
+    await answer('friend ok')
+    await answer('1')
+
+    expect(await screen.findByText('Ahora sos amigo de grace')).toBeInTheDocument()
+    expect(accepted).toHaveBeenCalled()
+  })
+
+  it('refuses to accept a request the player sent themselves, from inside the menu', async () => {
+    const accepted = vi.fn()
+    const outgoing = {
+      id: 'c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
+      status: 'PENDING',
+      direction: 'OUTGOING',
+      player: rival,
+      createdAt: '2026-09-07T10:15:00.000Z',
+      updatedAt: '2026-09-07T10:15:00.000Z',
+    }
+    useSessionStore.getState().setTokens(pair)
+    server.use(
+      http.get(`${baseUrl}/friendships`, () => HttpResponse.json([outgoing])),
+      http.get(`${baseUrl}/leaderboard`, () => HttpResponse.json([])),
+      http.patch(`${baseUrl}/friendships/${outgoing.id}/accept`, () => {
+        accepted()
+        return HttpResponse.json(outgoing)
+      }),
+    )
+    renderConsole()
+
+    await answer('friends')
+    await screen.findByText('MANDASTE SOLICITUD')
+    await answer('friend ok')
+    await answer('1')
+
+    // The reason is on screen twice by design — struck through on the option, and again
+    // as the refusal — so this asks for the one that answered the player.
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Esta la mandaste vos: la tiene que aceptar la otra persona',
+    )
+    expect(accepted).not.toHaveBeenCalled()
+  })
+
   it('takes the size typed with the command, without drawing the step', async () => {
     const seen = vi.fn()
     useSessionStore.getState().setTokens(pair)
