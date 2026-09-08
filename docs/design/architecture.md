@@ -262,20 +262,50 @@ después.
 El store guarda el estado de la pelea y el registro acumulado:
 
 ```ts
-interface BattleState {
+export type ConnectionState = 'idle' | 'connecting' | 'open' | 'closed' | 'rejected'
+
+export interface EndedView {
+  winnerId: string
+  reason: BattleEndReason
+  endedAt: string
+  ranked: boolean
+  ratingChanges: RatingChangeView[]
+}
+
+export interface BattleState {
   battleId: string | null
-  status: BattleStatus
+  status: BattleStatus | null
   currentRound: number
   activeUserId: string | null
   combatants: CombatantView[]
   turns: TurnView[]
-  log: LogEntry[]
-  openWindow: ReactionWindow | null
-  opponentLeft: OpponentLeft | null
-  lastError: BattleErrorView | null
-  connection: 'idle' | 'connecting' | 'open' | 'closed' | 'rejected'
+  log: BattleEvent[]
+  openWindow: WindowView | null
+  opponentLeft: LeftView | null
+  ended: EndedView | null
+  lastError: BattleErrorPayload | null
+  connection: ConnectionState
+
+  applyState: (payload: BattleStatePayload) => void
+  applyRoundStart: (payload: BattleRoundStartPayload) => void
+  applyReactionWindow: (payload: BattleReactionWindowPayload) => void
+  applyTurnResolved: (payload: BattleTurnResolvedPayload) => void
+  applyEnded: (payload: BattleEndedPayload) => void
+  applyOpponentLeft: (payload: BattleOpponentLeftPayload) => void
+  applyError: (payload: BattleErrorPayload) => void
+  setConnection: (next: ConnectionState) => void
+  reset: () => void
 }
 ```
+
+> `ended` guarda el desenlace (`winnerId`, `reason`, `endedAt`, `ranked`, `ratingChanges`) porque
+> `battle:ended` llega una sola vez y `battle:state` no lo repite: sin esa rebanada, reconectar
+> después de terminar borraría el resumen. `log` guarda los eventos del contrato, no líneas ya
+> renderizadas — traducir evento a texto es una función pura de la pantalla, y guardar el texto
+> congelaría la redacción antes de que exista el renderizador.
+>
+> El adapter no importa `features/auth`: recibe la suscripción al token como puerto desde la raíz
+> de composición, igual que el cliente HTTP recibe su `TokenStore`. `shared/` no conoce features.
 
 Dos reglas del store que salen directo del contrato:
 
