@@ -12,7 +12,7 @@ context: |
 strict_tdd: true
 
 testing:
-  status: planned_unverified
+  status: verified
   test_command: "pnpm test"
   framework: Vitest + Testing Library + MSW
   layers:
@@ -23,9 +23,10 @@ testing:
     realtime: Vitest with a hand-rolled BattleSocket double — event-by-event store transitions
     ui: Testing Library + MSW — full user flows
   note: >
-    Recorded as PLANNED and UNVERIFIED. Becomes real only after Phase 0 of
-    docs/design/implementation-plan.md lands package.json and the test
-    script. Update sdd-init/4-agosto-front (and this file) once verified.
+    VERIFIED on 2026-09-07 against main at commit 0c7fd9b: `pnpm test`
+    (vitest run) reports 81 files / 909 tests passing, exit 0. A full run
+    takes ~160s, dominated by ~119s of jsdom setup — batch work between
+    runs rather than assuming a fast feedback loop.
 
 routing:
   # Only 3 of 12 implementation-plan.md phases use the SDD route.
@@ -36,7 +37,13 @@ routing:
       branch: feat/add-command-registry
     - change: add-battle-realtime
       phase: 8
-      branch: feat/add-battle-realtime
+      # Delivered as a stack of three branches, not one. Every PR bases on
+      # main and integrates with a merge commit, per git-workflow.md.
+      branch: feat/battle-store-core
+      chained_branches:
+        - feat/battle-store-core
+        - feat/battle-store-events
+        - feat/battle-socket-adapter
     - change: add-battle-arena
       phase: 9
       branch: feat/add-battle-arena
