@@ -52,6 +52,9 @@ function answerOf(arg: CommandArg, values: ParsedArgs, ctx: CommandContext): str
  * Every step of the run at once, with the answers already given. A guided wizard that only
  * ever shows the question in front of you gives no sense of how long it is or of what you
  * already decided, and there is no way back to check.
+ *
+ * It scrolls instead of growing: the layout caps its height, and a long run of steps
+ * scrolls inside that cap rather than squeezing the question below it out of sight.
  */
 export function CommandChecklist() {
   const { ctx, pending, registry } = useCommandRuntime()
@@ -67,7 +70,12 @@ export function CommandChecklist() {
   }
 
   return (
-    <Panel title={command.label} label={`Pasos: ${command.label}`} note="lo que falta y lo que ya">
+    <Panel
+      title={command.label}
+      label={`Pasos: ${command.label}`}
+      note="lo que falta y lo que ya"
+      scroll
+    >
       <ol className="flex flex-col">
         {command.args.map((arg) => {
           const state = stateOf(arg, pending.values, pending.awaiting)
