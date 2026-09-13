@@ -44,13 +44,15 @@ function ConsoleStack({ children }: ConsoleStackProps) {
         <Outlet />
       </ConsoleSlot>
 
+      {/* The checklist sits above the question on purpose: what is being asked reads next
+          to what was already answered and what is still ahead. It is never the focus and
+          has a slot of its own, so the floor of the question belongs to the options and a
+          long run of steps is the one that yields. */}
+      <ConsoleSlot grows={false}>
+        <CommandChecklist />
+      </ConsoleSlot>
+
       <ConsoleSlot grows={focus === 'question'}>
-        {/* The checklist sits above the question on purpose: what is being asked reads
-            next to what was already answered and what is still ahead. It never grows, so
-            a long run of steps scrolls inside its cap and the options keep the rest. */}
-        <ConsoleSlot grows={false}>
-          <CommandChecklist />
-        </ConsoleSlot>
         <CommandPanel />
       </ConsoleSlot>
 
