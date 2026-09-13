@@ -51,3 +51,40 @@ the same as it replaces any prior result.
 - GIVEN an announcement is currently shown in the output box
 - WHEN the player runs any command that produces a result
 - THEN the output box shows that command's result instead
+
+### Requirement: A Pending Step Autofills When Its Value Is Already Determined by Context
+A `PendingCommand` step MAY declare an `autofill` that supplies its value from context
+instead of asking the player, used only when that value is already determined without
+ambiguity (e.g. a single live battle to enter, or a confirmation not actually needed). A
+step's ordinary prompt-and-wait behavior MUST be unchanged when no autofill applies or when
+its condition for skipping is not met.
+
+#### Scenario: A single live battle enters directly without a picker
+- GIVEN the player has exactly one live battle
+- WHEN `enter`'s `battle` step evaluates its autofill
+- THEN that battle is selected without prompting a numbered picker
+
+#### Scenario: Entering an ACCEPTED battle still asks for confirmation
+- GIVEN the chosen battle's status is `ACCEPTED`
+- WHEN `enter`'s `confirm` step evaluates its autofill
+- THEN no autofill applies and the player is prompted to confirm
+
+#### Scenario: Entering an already IN_PROGRESS battle needs no confirmation
+- GIVEN the chosen battle's status is `IN_PROGRESS`
+- WHEN `enter`'s `confirm` step evaluates its autofill
+- THEN it autofills and the player is not prompted
+
+#### Scenario: `volver` from an IN_PROGRESS battle still asks for confirmation
+- GIVEN the current battle's status is `IN_PROGRESS`
+- WHEN `volver`'s `confirm` step evaluates its autofill
+- THEN no autofill applies and the player is prompted to confirm
+
+#### Scenario: `volver` outside an in-progress battle needs no confirmation
+- GIVEN the current battle's status is not `IN_PROGRESS`, or there is no result yet
+- WHEN `volver`'s `confirm` step evaluates its autofill
+- THEN it autofills and the player is not prompted
+
+#### Scenario: A step without autofill behaves exactly as today
+- GIVEN a step declares no `autofill`
+- WHEN the pending command reaches that step
+- THEN the player is prompted exactly as before, with no behavior change
