@@ -105,6 +105,37 @@ describe('CommandChecklist', () => {
     expect(items.at(-1)).toHaveAttribute('data-state', 'ahead')
   })
 
+  it('marks every step with its state in the character grid', () => {
+    renderChecklist({ commandId: 'build-new', values: { name: 'Duelista' }, awaiting: 'strength' })
+
+    const markers = [
+      ['✓', 'done'],
+      ['▸', 'current'],
+      ['·', 'ahead'],
+    ] as const
+
+    for (const [marker, state] of markers) {
+      const [first] = screen.getAllByText(marker)
+
+      expect(first).toHaveAttribute('aria-hidden', 'true')
+      expect(first?.closest('li')).toHaveAttribute('data-state', state)
+    }
+  })
+
+  it('lights up the step being asked and dims the rest', () => {
+    renderChecklist({ commandId: 'build-new', values: { name: 'Duelista' }, awaiting: 'strength' })
+
+    expect(colorOf(screen.getByText('Fuerza'))).toBe('text-accent')
+    expect(colorOf(screen.getByText('Nombre'))).toBe('text-text-dim')
+    expect(colorOf(screen.getByText('Magia'))).toBe('text-text-dim')
+  })
+
+  it('writes the answer in plain text, apart from the dimmed label', () => {
+    renderChecklist({ commandId: 'build-new', values: { name: 'Duelista' }, awaiting: 'strength' })
+
+    expect(colorOf(screen.getByText('Duelista'))).toBe('text-text')
+  })
+
   it('never prints back a secret the player typed', () => {
     renderChecklist({
       commandId: 'build-new',
@@ -122,6 +153,25 @@ describe('CommandChecklist', () => {
     expect(container).toBeEmptyDOMElement()
   })
 })
+
+const COLORS = ['text-text', 'text-text-dim', 'text-accent']
+
+/** The color a piece of text ends up painted in: its own, or the nearest one it inherits. */
+function colorOf(element: HTMLElement): string | undefined {
+  let node: HTMLElement | null = element
+
+  while (node !== null) {
+    const color = COLORS.find((candidate) => node?.classList.contains(candidate))
+
+    if (color !== undefined) {
+      return color
+    }
+
+    node = node.parentElement
+  }
+
+  return undefined
+}
 
 function renderChecklist(pending: PendingCommand | null, values: ParsedArgs = {}) {
   const runtime: CommandRuntime = {
