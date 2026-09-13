@@ -5,7 +5,7 @@ import { ConsoleSlot } from './ConsoleSlot'
 
 /**
  * These pin the classes the slot hands out. They do not prove the heights land — that takes
- * a real browser — only that the slot, and nothing inside it, is the one deciding them.
+ * a real browser — only that the focus decides the order boxes yield in, and nothing else.
  */
 function slotOf(container: HTMLElement): Element {
   const slot = container.firstElementChild
@@ -19,61 +19,42 @@ function slotOf(container: HTMLElement): Element {
 
 describe('ConsoleSlot', () => {
   it('renders what it is given', () => {
-    render(<ConsoleSlot grows>la salida</ConsoleSlot>)
+    render(<ConsoleSlot focused>la salida</ConsoleSlot>)
 
     expect(screen.getByText('la salida')).toBeInTheDocument()
   })
 
-  it('starts from the height of what it holds in either state, so nothing is clipped with room to spare', () => {
-    const growing = slotOf(render(<ConsoleSlot grows>content</ConsoleSlot>).container)
-    const waiting = slotOf(render(<ConsoleSlot grows={false}>content</ConsoleSlot>).container)
+  it('steps out of the layout, so the column sizes the box it holds and not a wrapper', () => {
+    const focused = slotOf(render(<ConsoleSlot focused>content</ConsoleSlot>).container)
+    const waiting = slotOf(render(<ConsoleSlot focused={false}>content</ConsoleSlot>).container)
 
-    expect(growing).toHaveClass('basis-[content]')
-    expect(waiting).toHaveClass('basis-[content]')
+    expect(focused).toHaveClass('contents')
+    expect(waiting).toHaveClass('contents')
   })
 
-  it('puts no fixed cap on any box, focused or not', () => {
-    const growing = slotOf(render(<ConsoleSlot grows>content</ConsoleSlot>).container)
-    const waiting = slotOf(render(<ConsoleSlot grows={false}>content</ConsoleSlot>).container)
+  it('makes a box waiting its turn yield first when the console runs short', () => {
+    const slot = slotOf(render(<ConsoleSlot focused={false}>content</ConsoleSlot>).container)
 
-    expect(growing.className).not.toMatch(/max-h-/)
-    expect(waiting.className).not.toMatch(/max-h-/)
+    expect(slot).toHaveClass('[--console-yield:1000]')
   })
 
-  it('keeps a floor of about three options under the box being worked in', () => {
-    const slot = slotOf(render(<ConsoleSlot grows>content</ConsoleSlot>).container)
+  it('makes the box being worked in the last one to yield', () => {
+    const slot = slotOf(render(<ConsoleSlot focused>content</ConsoleSlot>).container)
 
-    expect(slot).toHaveClass('h-[10rem]')
-    expect(slot).toHaveClass('grow')
-    expect(slot).not.toHaveClass('shrink-[1000]')
+    expect(slot).toHaveClass('[--console-yield:1]')
+    expect(slot).not.toHaveClass('[--console-yield:1000]')
   })
 
-  it('makes a box waiting its turn the first to give up height, down to a heading and a line', () => {
-    const slot = slotOf(render(<ConsoleSlot grows={false}>content</ConsoleSlot>).container)
+  it('never makes a box grow, cap or floor itself: the focus only decides the order', () => {
+    const focused = slotOf(render(<ConsoleSlot focused>content</ConsoleSlot>).container)
+    const waiting = slotOf(render(<ConsoleSlot focused={false}>content</ConsoleSlot>).container)
 
-    expect(slot).toHaveClass('h-[4.25rem]')
-    expect(slot).toHaveClass('shrink-[1000]')
-    expect(slot).not.toHaveClass('grow')
-  })
-
-  it('leaves the minimum height automatic, which is what turns its height into a floor', () => {
-    const growing = slotOf(render(<ConsoleSlot grows>content</ConsoleSlot>).container)
-    const waiting = slotOf(render(<ConsoleSlot grows={false}>content</ConsoleSlot>).container)
-
-    expect(growing.className).not.toMatch(/min-h-/)
-    expect(waiting.className).not.toMatch(/min-h-/)
-  })
-
-  it('lays its content out as a column, so a scrolling panel can fill it in either state', () => {
-    const growing = slotOf(render(<ConsoleSlot grows>content</ConsoleSlot>).container)
-    const waiting = slotOf(render(<ConsoleSlot grows={false}>content</ConsoleSlot>).container)
-
-    expect(growing).toHaveClass('flex', 'flex-col')
-    expect(waiting).toHaveClass('flex', 'flex-col')
+    expect(focused.className).not.toMatch(/grow|flex-1|basis-|h-\[|max-h-|min-h-/)
+    expect(waiting.className).not.toMatch(/grow|flex-1|basis-|h-\[|max-h-|min-h-/)
   })
 
   it('disappears when what it holds renders nothing, so it leaves no gap behind', () => {
-    const slot = slotOf(render(<ConsoleSlot grows>{null}</ConsoleSlot>).container)
+    const slot = slotOf(render(<ConsoleSlot focused>{null}</ConsoleSlot>).container)
 
     expect(slot).toBeEmptyDOMElement()
     expect(slot).toHaveClass('empty:hidden')
