@@ -662,7 +662,7 @@ function slotOf(element: HTMLElement): HTMLElement {
 function growingSlots(anyBox: HTMLElement): Element[] {
   const column = slotOf(slotOf(anyBox))
 
-  return Array.from(column.children).filter((child) => child.classList.contains('flex-1'))
+  return Array.from(column.children).filter((child) => child.classList.contains('grow'))
 }
 
 describe('ConsoleLayout focus', () => {
@@ -680,8 +680,8 @@ describe('ConsoleLayout focus', () => {
     const screenSlot = slotOf(screen.getByText('the builds screen'))
     const commands = screen.getByRole('region', { name: 'comandos' })
 
-    expect(screenSlot).toHaveClass('flex-1')
-    expect(slotOf(commands)).toHaveClass('shrink-0')
+    expect(screenSlot).toHaveClass('grow')
+    expect(slotOf(commands)).toHaveClass('shrink-[1000]')
     expect(growingSlots(commands)).toEqual([screenSlot])
   })
 
@@ -692,12 +692,12 @@ describe('ConsoleLayout focus', () => {
 
     const question = screen.getByRole('region', { name: /^Opciones:/ })
 
-    expect(slotOf(question)).toHaveClass('flex-1')
-    expect(slotOf(screen.getByText('the lobby screen'))).not.toHaveClass('flex-1')
+    expect(slotOf(question)).toHaveClass('grow')
+    expect(slotOf(screen.getByText('the lobby screen'))).not.toHaveClass('grow')
     expect(growingSlots(question)).toEqual([slotOf(question)])
   })
 
-  it('keeps the checklist above the question, at a capped height of its own', async () => {
+  it('keeps the checklist above the question in a slot of its own that yields first', async () => {
     renderConsole()
 
     await answer('login')
@@ -705,8 +705,12 @@ describe('ConsoleLayout focus', () => {
     const checklist = screen.getByRole('region', { name: /^Pasos:/ })
     const question = screen.getByRole('region', { name: /^Opciones:/ })
 
-    expect(slotOf(checklist)).toHaveClass('shrink-0', 'max-h-[30vh]')
-    expect(slotOf(slotOf(checklist))).toBe(slotOf(question))
+    // Its own slot, not a share of the question's: the floor of the box being worked in
+    // belongs to the options, and a long checklist must not be the one eating it.
+    expect(slotOf(checklist)).not.toBe(slotOf(question))
+    expect(slotOf(checklist)).toHaveClass('shrink-[1000]')
+    expect(slotOf(checklist)).not.toHaveClass('grow')
+    expect(slotOf(slotOf(checklist))).toBe(slotOf(slotOf(question)))
     expect(checklist.compareDocumentPosition(question)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
@@ -720,8 +724,8 @@ describe('ConsoleLayout focus', () => {
 
     const output = screen.getByRole('region', { name: 'salida' })
 
-    expect(slotOf(output)).toHaveClass('flex-1')
-    expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass('shrink-0')
+    expect(slotOf(output)).toHaveClass('grow')
+    expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass('shrink-[1000]')
     expect(growingSlots(output)).toEqual([slotOf(output)])
   })
 })
