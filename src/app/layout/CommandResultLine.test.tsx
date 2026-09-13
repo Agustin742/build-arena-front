@@ -88,19 +88,23 @@ describe('CommandResultLine', () => {
     expect(screen.getByRole('region', { name: 'salida' })).toBeInTheDocument()
   })
 
-  it('takes the leftover height while nothing is being asked, for a catalog of twelve', () => {
+  it('fills whatever height its slot hands it while nothing is being asked', () => {
     renderResult({ status: 'ok', message: 'Catálogo', lines: ['1) Golpe potente'] })
 
-    expect(screen.getByRole('region', { name: 'salida' })).toHaveClass('flex-1')
+    const region = screen.getByRole('region', { name: 'salida' })
+
+    expect(region).toHaveClass('flex-1')
+    expect(region).not.toHaveClass('max-h-[30vh]')
   })
 
-  it('holds still while a step is open, instead of being crushed by the options', () => {
+  it('leaves its height to the layout while a step is open, instead of deciding it itself', () => {
     renderResult({ status: 'ok', message: 'Catálogo', lines: ['1) Golpe potente'] }, asking())
 
     const region = screen.getByRole('region', { name: 'salida' })
 
-    expect(region).toHaveClass('shrink-0')
-    expect(region).not.toHaveClass('flex-1')
+    expect(region).toHaveClass('flex-1')
+    expect(region).not.toHaveClass('shrink-0')
+    expect(region).not.toHaveClass('max-h-[30vh]')
   })
 })
 
