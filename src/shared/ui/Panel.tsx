@@ -18,25 +18,12 @@ interface PanelProps {
    */
   lead?: ReactNode
   /**
-   * Scroll the body instead of growing. The heading stays put, and the panel gives up
-   * height when the console runs out of it rather than pushing the prompt off the screen.
+   * Scroll the body instead of growing. The heading stays put, and the panel fills
+   * whatever height the box around it hands it — how much that is, is not the panel's
+   * call. In the console a slot decides it, one value for every box at once.
    */
   scroll?: boolean
-  /**
-   * This is the box the player is working in, so it takes whatever height is left over.
-   *
-   * Exactly one scrolling panel should claim it at a time. Two of them asking for the same
-   * leftover is what flexbox splits in proportion to their content — which is how a five
-   * line box next to a hundred row list ends up sixteen pixels tall with a scrollbar on it.
-   */
-  grow?: boolean
 }
-
-/**
- * What a scrolling panel is allowed to take while it is not the one being answered in.
- * Below its own content it never goes; above this it scrolls instead of pushing.
- */
-const WAITING_ITS_TURN = 'max-h-[30vh] shrink-0'
 
 export function Panel({
   title,
@@ -46,7 +33,6 @@ export function Panel({
   label,
   lead,
   scroll = false,
-  grow = false,
 }: PanelProps) {
   // `min-h-0` on both the panel and its body is what allows the shrinking: a flex item
   // refuses to go below its content height until it is told it may.
@@ -59,8 +45,7 @@ export function Panel({
       <div className={bodyClass}>{children}</div>
     </>
   )
-  const competing = grow ? 'min-h-0 flex-1' : WAITING_ITS_TURN
-  const frame = `border border-border bg-surface ${scroll ? `flex flex-col ${competing}` : ''}`
+  const frame = `border border-border bg-surface ${scroll ? 'flex min-h-0 flex-1 flex-col' : ''}`
 
   if (title === undefined) {
     return <div className={`${frame} ${className}`}>{body}</div>
