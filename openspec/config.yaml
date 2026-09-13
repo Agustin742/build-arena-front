@@ -3,9 +3,9 @@ schema: spec-driven
 context: |
   Build Arena Web — dumb console-styled client for the Build Arena turn-based
   duel API (sibling repo `4-agosto`). No domain logic: the client renders
-  server intent and events only. Stack is PLANNED (not yet scaffolded, no
-  package.json exists): React + Vite + TS strict, React Router, TanStack
-  Query, Zustand, socket.io-client, Zod, Tailwind, pnpm.
+  server intent and events only. Stack is SCAFFOLDED (package.json present):
+  React 19 + Vite + TS strict, React Router, TanStack Query, Zustand,
+  socket.io-client, Zod v4, Tailwind v4, pnpm.
   Docs in Spanish; code/folders/routes/events/identifiers in English, no code
   comments.
 
@@ -13,7 +13,10 @@ strict_tdd: true
 
 testing:
   status: verified
-  test_command: "pnpm test"
+  test_command: "pnpm exec vitest run --maxWorkers=2"
+  typecheck_command: "pnpm typecheck"
+  lint_command: "pnpm lint"
+  format_command: "pnpm format:check"
   framework: Vitest + Testing Library + MSW
   layers:
     domain: Vitest pure — attribute cost table, modifiers, derived stats
@@ -27,6 +30,11 @@ testing:
     (vitest run) reports 81 files / 909 tests passing, exit 0. A full run
     takes ~160s, dominated by ~119s of jsdom setup — batch work between
     runs rather than assuming a fast feedback loop.
+  known_issues: >
+    `pnpm format:check` currently FAILS on main (commit a314511) in 3
+    src/shared/realtime files: battle-socket.test.ts, battle-socket.ts,
+    battle.store.test.ts. Prettier reports formatting drift, not a
+    functional defect. Confirmed 2026-09-13.
 
 routing:
   # Only 3 of 12 implementation-plan.md phases use the SDD route.
