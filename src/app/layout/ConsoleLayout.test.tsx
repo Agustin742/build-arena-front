@@ -643,3 +643,85 @@ describe('ConsoleLayout', () => {
     expect(seen).toHaveBeenCalledWith('10')
   })
 })
+
+/**
+ * The slot is the parent of what the console puts in it. These read the classes the layout
+ * hands out; they do not prove the height lands in a real browser, only who decides it.
+ */
+function slotOf(element: HTMLElement): HTMLElement {
+  const slot = element.parentElement
+
+  if (slot === null) {
+    throw new Error('the element sits in no slot')
+  }
+
+  return slot
+}
+
+/** Every slot of the console column that is taking the leftover height right now. */
+function growingSlots(anyBox: HTMLElement): Element[] {
+  const column = slotOf(slotOf(anyBox))
+
+  return Array.from(column.children).filter((child) => child.classList.contains('flex-1'))
+}
+
+describe('ConsoleLayout focus', () => {
+  beforeEach(() => {
+    useSessionStore.getState().clear()
+    useThrottleStore.getState().release()
+    useMenuStore.getState().close()
+    queryClient.clear()
+  })
+
+  it('hands the leftover height to the screen while nothing is asked and nothing printed', () => {
+    useSessionStore.getState().setTokens(pair)
+    renderConsole('/builds')
+
+    const screenSlot = slotOf(screen.getByText('the builds screen'))
+    const commands = screen.getByRole('region', { name: 'comandos' })
+
+    expect(screenSlot).toHaveClass('flex-1')
+    expect(slotOf(commands)).toHaveClass('shrink-0')
+    expect(growingSlots(commands)).toEqual([screenSlot])
+  })
+
+  it('hands it to the question while a step is open, and to nothing else', async () => {
+    renderConsole()
+
+    await answer('login')
+
+    const question = screen.getByRole('region', { name: /^Opciones:/ })
+
+    expect(slotOf(question)).toHaveClass('flex-1')
+    expect(slotOf(screen.getByText('the lobby screen'))).not.toHaveClass('flex-1')
+    expect(growingSlots(question)).toEqual([slotOf(question)])
+  })
+
+  it('keeps the checklist above the question, at a capped height of its own', async () => {
+    renderConsole()
+
+    await answer('login')
+
+    const checklist = screen.getByRole('region', { name: /^Pasos:/ })
+    const question = screen.getByRole('region', { name: /^Opciones:/ })
+
+    expect(slotOf(checklist)).toHaveClass('shrink-0', 'max-h-[30vh]')
+    expect(slotOf(slotOf(checklist))).toBe(slotOf(question))
+    expect(checklist.compareDocumentPosition(question)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('hands it to the output once something printed and nothing is being asked', async () => {
+    useSessionStore.getState().setTokens(pair)
+    server.use(http.get(`${baseUrl}/leaderboard`, () => HttpResponse.json([])))
+    renderConsole()
+
+    await answer('top 10')
+    await screen.findByText('Todavía no peleó nadie')
+
+    const output = screen.getByRole('region', { name: 'salida' })
+
+    expect(slotOf(output)).toHaveClass('flex-1')
+    expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass('shrink-0')
+    expect(growingSlots(output)).toEqual([slotOf(output)])
+  })
+})
