@@ -1,35 +1,26 @@
+import { hasOutput } from '@/app/layout/console-focus'
 import { useCommandRuntime } from '@/app/providers/command-runtime'
 import { LogLine, Panel } from '@/shared/ui'
 
 const TITLE = 'salida'
 
 export function CommandResultLine() {
-  const { lastResult, pendingStep } = useCommandRuntime()
+  const { lastResult } = useCommandRuntime()
 
-  if (lastResult === null) {
+  // The same question the layout asks before it focuses this box, so the console never
+  // hands the leftover height to an output that prints nothing.
+  if (!hasOutput(lastResult)) {
     return null
   }
 
   const lines = lastResult.lines ?? []
-
-  if (lastResult.message === undefined && lines.length === 0) {
-    return null
-  }
-
   const failed = lastResult.status === 'error'
 
   return (
-    // Between questions this is what the player came to read — a catalog of twelve skills
-    // lands here — so it takes the leftover height and gives it up rather than pushing the
-    // prompt off the console. While a step is open it steps aside: the options are what
-    // needs the room, and a five line output squeezed next to a hundred row list is a
-    // scrollbar around nothing.
-    <Panel
-      title={TITLE}
-      {...(failed ? { note: 'la arena rechazó algo' } : {})}
-      scroll
-      grow={pendingStep === null}
-    >
+    // A catalog of twelve skills lands here, so the box scrolls. How much room it gets is
+    // the layout's call: the leftover height between questions, a capped share while a
+    // step is open and the options need the room.
+    <Panel title={TITLE} {...(failed ? { note: 'la arena rechazó algo' } : {})} scroll>
       <div role={failed ? 'alert' : 'status'} className="flex flex-col">
         {lastResult.message === undefined ? null : (
           <LogLine marker="»" tone={failed ? 'error' : 'success'}>
