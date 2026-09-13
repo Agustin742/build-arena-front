@@ -643,3 +643,91 @@ describe('ConsoleLayout', () => {
     expect(seen).toHaveBeenCalledWith('10')
   })
 })
+
+/**
+ * The slot is the parent of what the console puts in it. These read the classes the layout
+ * hands out; they do not prove the height lands in a real browser, only who decides it.
+ */
+function slotOf(element: HTMLElement): HTMLElement {
+  const slot = element.parentElement
+
+  if (slot === null) {
+    throw new Error('the element sits in no slot')
+  }
+
+  return slot
+}
+
+const YIELDS_LAST = '[--console-yield:1]'
+const YIELDS_FIRST = '[--console-yield:1000]'
+
+/** Every slot of the console column that is the last to give up height right now. */
+function focusedSlots(anyBox: HTMLElement): Element[] {
+  const column = slotOf(slotOf(anyBox))
+
+  return Array.from(column.children).filter((child) => child.classList.contains(YIELDS_LAST))
+}
+
+describe('ConsoleLayout focus', () => {
+  beforeEach(() => {
+    useSessionStore.getState().clear()
+    useThrottleStore.getState().release()
+    useMenuStore.getState().close()
+    queryClient.clear()
+  })
+
+  it('makes the screen the last to yield while nothing is asked and nothing printed', () => {
+    useSessionStore.getState().setTokens(pair)
+    renderConsole('/builds')
+
+    const screenSlot = slotOf(screen.getByText('the builds screen'))
+    const commands = screen.getByRole('region', { name: 'comandos' })
+
+    expect(screenSlot).toHaveClass(YIELDS_LAST)
+    expect(slotOf(commands)).toHaveClass(YIELDS_FIRST)
+    expect(focusedSlots(commands)).toEqual([screenSlot])
+  })
+
+  it('makes the question the last to yield while a step is open, and nothing else', async () => {
+    renderConsole()
+
+    await answer('login')
+
+    const question = screen.getByRole('region', { name: /^Opciones:/ })
+
+    expect(slotOf(question)).toHaveClass(YIELDS_LAST)
+    expect(slotOf(screen.getByText('the lobby screen'))).toHaveClass(YIELDS_FIRST)
+    expect(focusedSlots(question)).toEqual([slotOf(question)])
+  })
+
+  it('keeps the checklist above the question in a slot of its own that yields first', async () => {
+    renderConsole()
+
+    await answer('login')
+
+    const checklist = screen.getByRole('region', { name: /^Pasos:/ })
+    const question = screen.getByRole('region', { name: /^Opciones:/ })
+
+    // Its own slot, not a share of the question's: the checklist is never the focus, so a
+    // long run of steps gives up its height before the options do.
+    expect(slotOf(checklist)).not.toBe(slotOf(question))
+    expect(slotOf(checklist)).toHaveClass(YIELDS_FIRST)
+    expect(slotOf(slotOf(checklist))).toBe(slotOf(slotOf(question)))
+    expect(checklist.compareDocumentPosition(question)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('makes the output the last to yield once something printed and nothing is asked', async () => {
+    useSessionStore.getState().setTokens(pair)
+    server.use(http.get(`${baseUrl}/leaderboard`, () => HttpResponse.json([])))
+    renderConsole()
+
+    await answer('top 10')
+    await screen.findByText('Todavía no peleó nadie')
+
+    const output = screen.getByRole('region', { name: 'salida' })
+
+    expect(slotOf(output)).toHaveClass(YIELDS_LAST)
+    expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass(YIELDS_FIRST)
+    expect(focusedSlots(output)).toEqual([slotOf(output)])
+  })
+})

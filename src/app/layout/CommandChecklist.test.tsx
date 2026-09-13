@@ -147,6 +147,14 @@ describe('CommandChecklist', () => {
     expect(screen.getByText('••••••')).toBeInTheDocument()
   })
 
+  it('scrolls a long run of steps inside its own box, instead of squeezing the question', () => {
+    renderChecklist({ commandId: 'build-new', values: {}, awaiting: 'name' })
+
+    const body = screen.getByRole('list').parentElement
+
+    expect(body).toHaveClass('overflow-y-auto')
+  })
+
   it('says nothing about a command the registry no longer knows', () => {
     const { container } = renderChecklist({ commandId: 'gone', values: {}, awaiting: 'name' })
 

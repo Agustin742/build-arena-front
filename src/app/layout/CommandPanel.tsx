@@ -51,8 +51,8 @@ export function CommandPanel() {
     // "comandos" gives the player no way to tell they stepped into anything.
     const menu = ctx.state.menu
 
-    // Between questions the output is what the player came to read, so this box holds
-    // still and lets it have the room. A menu is a handful of commands; it fits.
+    // How tall this box gets is the layout's call, not this panel's: it fills its slot and
+    // scrolls inside it. A menu is a handful of commands; it fits.
     return (
       <Panel title={menu ?? COMMANDS_TITLE} note={COMMANDS_NOTE} scroll>
         <CommandListContainer />
@@ -70,10 +70,9 @@ export function CommandPanel() {
       // The sentence goes in the lead, not in the body: a list of a hundred names has to
       // scroll, and a question that scrolls out of sight is a question nobody can answer.
       {...(sentence === undefined ? {} : { lead: <LogLine tone="dim">{sentence}</LogLine> })}
+      // While the console is asking the layout hands this box the leftover height; the
+      // panel only fills it and scrolls the options inside.
       scroll
-      // While the console is asking, this is the box the player is working in, so it takes
-      // the leftover height. Exactly one box may ask for it at a time.
-      grow
     >
       <CommandListContainer />
     </Panel>
