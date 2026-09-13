@@ -110,23 +110,22 @@ describe('CommandPanel', () => {
     expect(screen.getByText(/esc para cancelar/)).toBeInTheDocument()
   })
 
-  it('fills whatever height its slot hands it while it is the one asking', () => {
+  it('starts from the height of its options while it is the one asking, and never grows', () => {
     renderPanel(step({ label: 'A quién' }))
 
     const region = screen.getByRole('region', { name: 'Opciones: A quién' })
 
-    expect(region).toHaveClass('flex-1')
-    expect(region).not.toHaveClass('max-h-[30vh]')
+    expect(region).toHaveClass('basis-[content]')
+    expect(region.className).not.toMatch(/flex-1|grow|max-h-/)
   })
 
-  it('leaves its height to the layout between questions, instead of deciding it itself', () => {
+  it('leaves the order in which it yields to the layout between questions', () => {
     renderPanel(null)
 
     const region = screen.getByRole('region', { name: 'comandos' })
 
-    expect(region).toHaveClass('flex-1')
-    expect(region).not.toHaveClass('shrink-0')
-    expect(region).not.toHaveClass('max-h-[30vh]')
+    expect(region).toHaveClass('shrink-[var(--console-yield,1)]')
+    expect(region.className).not.toMatch(/flex-1|grow|max-h-|shrink-0/)
   })
 })
 
