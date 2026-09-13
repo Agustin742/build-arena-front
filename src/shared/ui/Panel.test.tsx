@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { Panel } from './Panel'
 
@@ -88,8 +88,8 @@ describe('Panel with a lead line', () => {
   })
 })
 
-describe('Panel inside a box that decides its height', () => {
-  it('fills whatever height it is placed in when it scrolls', () => {
+describe('Panel sharing the height of the console', () => {
+  it('starts from the height of what it holds and never grows past it', () => {
     render(
       <Panel title="salida" scroll>
         content
@@ -98,10 +98,11 @@ describe('Panel inside a box that decides its height', () => {
 
     const region = screen.getByRole('region', { name: 'salida' })
 
-    expect(region).toHaveClass('flex', 'flex-col', 'flex-1')
+    expect(region).toHaveClass('flex', 'flex-col', 'basis-[content]')
+    expect(region.className).not.toMatch(/flex-1|grow|max-h-/)
   })
 
-  it('leaves the cap and the refusal to shrink to whoever places it', () => {
+  it('leaves its minimum height automatic, which is what turns its height into a floor', () => {
     render(
       <Panel title="salida" scroll>
         content
@@ -110,8 +111,44 @@ describe('Panel inside a box that decides its height', () => {
 
     const region = screen.getByRole('region', { name: 'salida' })
 
-    expect(region).not.toHaveClass('shrink-0')
-    expect(region).not.toHaveClass('max-h-[30vh]')
+    expect(region).toHaveClass('h-[var(--panel-floor,auto)]')
+    expect(region.className).not.toMatch(/min-h-/)
+  })
+
+  it('gives up height in the order the box around it sets', () => {
+    render(
+      <Panel title="salida" scroll>
+        content
+      </Panel>,
+    )
+
+    expect(screen.getByRole('region', { name: 'salida' })).toHaveClass(
+      'shrink-[var(--console-yield,1)]',
+    )
+  })
+
+  it('publishes the floor it measures from its heading and its first three rows', () => {
+    const height = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ height: 20 } as DOMRect)
+
+    render(
+      <Panel title="salida" scroll>
+        <ul>
+          <li>uno</li>
+          <li>dos</li>
+          <li>tres</li>
+          <li>cuatro</li>
+        </ul>
+      </Panel>,
+    )
+
+    // Every box reads 20px here, so nothing sits around the body and only the rows count.
+    expect(
+      screen.getByRole('region', { name: 'salida' }).style.getPropertyValue('--panel-floor'),
+    ).toBe('60px')
+
+    height.mockRestore()
   })
 
   it('keeps a panel that does not scroll at the height of what it holds', () => {
@@ -139,14 +176,14 @@ describe('Panel that scrolls its own body', () => {
     expect(body).toHaveClass('console-scroll')
   })
 
-  it('lets the panel shrink instead of pushing what sits below it off the screen', () => {
+  it('lets the body shrink below its rows instead of pushing what sits below it off the screen', () => {
     render(
       <Panel title="acción 1" scroll>
         <p>una opción</p>
       </Panel>,
     )
 
-    expect(screen.getByRole('region', { name: 'acción 1' })).toHaveClass('min-h-0')
+    expect(screen.getByText('una opción').parentElement).toHaveClass('min-h-0', 'flex-1')
   })
 
   it('leaves a plain panel alone, it grows with what it holds', () => {
