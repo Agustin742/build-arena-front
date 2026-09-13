@@ -58,35 +58,58 @@ unlock again.
 
 ### Slice 1 — Enter, See Combatants and Turn
 
-#### Requirement: Composition Root Opens One Socket Per Mount (Slice: 1)
-`src/app/boot/battle-socket.ts` MUST wire `subscribeToAccessToken` to the session store,
-mirroring `api-client.ts`. The route mount effect MUST use the `useSessionBootstrap`
-`useRef` guard so React 19 StrictMode's double-invoke opens exactly one socket connection.
+#### Requirement: Exactly One Live Connection Per Mounted Battle (Slice: 1)
+While the arena route is mounted for a `battleId`, the client MUST maintain exactly one live
+socket connection for that battle, regardless of how many times React (re-)invokes the mount
+effect (e.g. React 19 StrictMode's double-invoke). Leaving the arena screen MUST close that
+connection. Remounting for the same `battleId` without the player leaving MUST NOT produce a
+visible disconnect/reconnect cycle or a second connection; it MUST keep or reuse the single
+connection already open.
 
-##### Scenario: StrictMode double mount opens one socket
+##### Scenario: StrictMode double mount yields one live connection
 - GIVEN the arena route mounts under StrictMode
-- WHEN the mount effect runs twice synchronously
-- THEN exactly one `connect()`/`join()` pair is issued, not two
+- WHEN React invokes the mount effect twice synchronously
+- THEN exactly one live connection exists for that battle afterward
 
-##### Scenario: Unmount then remount reconnects cleanly
-- GIVEN the arena route unmounted and disconnected
-- WHEN it mounts again for the same `battleId`
-- THEN it reconnects and re-joins without a leaked prior connection
+##### Scenario: Leaving the arena disconnects
+- GIVEN a live connection is open for the current battle
+- WHEN the player navigates away from the arena route
+- THEN that connection closes
 
-#### Requirement: `ConsoleLayout` Feeds Live Battle State (Slice: 1)
-`ConsoleLayout` MUST derive `battleId` and `reactionWindowOpen` from `useBattleStore`
-instead of the hardcoded `null`/`false`, without changing scope behavior when no battle is
-joined.
+##### Scenario: Same-battle remount keeps a single connection
+- GIVEN the arena route unmounts and remounts for the same `battleId` without the player leaving
+- WHEN the remount completes
+- THEN exactly one live connection exists for that battle, with no visible disconnect in between
 
-##### Scenario: Outside a battle, scope is unaffected
-- GIVEN no battle is joined
+#### Requirement: `ConsoleLayout` Derives Battle Scope From the Route (Slice: 1)
+`ConsoleLayout` MUST derive `battleId` for `CommandState` from the current route
+(`/battles/:battleId`), not from `useBattleStore`: the store's `battleId` only arrives after
+`battle:state`, so deriving scope from the store would leave lobby commands visible while
+still connecting or on a `NOT_FOUND` error. The `battle` scope MUST be active from the arena
+route's first render, including while the connection is still establishing and while a
+`NOT_FOUND` error is showing. Outside the arena route, `battleId` MUST be `null` and
+`reactionWindowOpen` MUST be `false`, unchanged from before. `reactionWindowOpen` MUST still
+follow the store's open reaction window while on the arena route.
+
+##### Scenario: Outside the arena route, scope is unaffected
+- GIVEN the player is not on `/battles/:battleId`
 - WHEN `ConsoleLayout` builds `CommandState`
 - THEN `battleId` is `null` and `reactionWindowOpen` is `false`, as before
 
-##### Scenario: Joining a battle updates scope inputs
-- GIVEN a battle is joined and its store `battleId` is set
-- WHEN `ConsoleLayout` rebuilds `CommandState`
-- THEN `battleId` matches the store and `battle` scope becomes active
+##### Scenario: Battle scope is active while still connecting
+- GIVEN the player navigated to `/battles/:battleId` and `battle:state` has not arrived yet
+- WHEN `ConsoleLayout` builds `CommandState`
+- THEN the `battle` scope is already active, driven by the route, not the store
+
+##### Scenario: Battle scope stays active on NOT_FOUND
+- GIVEN the arena route shows a `NOT_FOUND` error before any `battle:state` arrived
+- WHEN `ConsoleLayout` builds `CommandState`
+- THEN the `battle` scope remains active so the `volver` command stays reachable
+
+##### Scenario: Reaction window still follows the store
+- GIVEN the player is on the arena route and the store's open reaction window is set
+- WHEN `ConsoleLayout` builds `CommandState`
+- THEN `reactionWindowOpen` is `true`
 
 #### Requirement: Entering a Battle by Command (Slice: 1)
 An `enter` command MUST list the caller's live (`ACCEPTED`/`IN_PROGRESS`) battles. With
