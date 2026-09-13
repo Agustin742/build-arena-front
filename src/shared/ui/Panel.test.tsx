@@ -88,18 +88,8 @@ describe('Panel with a lead line', () => {
   })
 })
 
-describe('Panel competing for the height of the console', () => {
-  it('takes the leftover space when it is the box being answered in', () => {
-    render(
-      <Panel title="a quién" scroll grow>
-        content
-      </Panel>,
-    )
-
-    expect(screen.getByRole('region', { name: 'a quién' })).toHaveClass('flex-1')
-  })
-
-  it('refuses to be squeezed when it is not the one being answered in', () => {
+describe('Panel inside a box that decides its height', () => {
+  it('fills whatever height it is placed in when it scrolls', () => {
     render(
       <Panel title="salida" scroll>
         content
@@ -108,31 +98,23 @@ describe('Panel competing for the height of the console', () => {
 
     const region = screen.getByRole('region', { name: 'salida' })
 
-    expect(region).toHaveClass('shrink-0')
-    expect(region).not.toHaveClass('flex-1')
+    expect(region).toHaveClass('flex', 'flex-col', 'flex-1')
   })
 
-  it('still refuses to outgrow a share of the console while it waits its turn', () => {
+  it('leaves the cap and the refusal to shrink to whoever places it', () => {
     render(
       <Panel title="salida" scroll>
         content
       </Panel>,
     )
 
-    expect(screen.getByRole('region', { name: 'salida' })).toHaveClass('max-h-[30vh]')
+    const region = screen.getByRole('region', { name: 'salida' })
+
+    expect(region).not.toHaveClass('shrink-0')
+    expect(region).not.toHaveClass('max-h-[30vh]')
   })
 
-  it('lets the growing one off that leash, because the leftover space is already its limit', () => {
-    render(
-      <Panel title="a quién" scroll grow>
-        content
-      </Panel>,
-    )
-
-    expect(screen.getByRole('region', { name: 'a quién' })).not.toHaveClass('max-h-[30vh]')
-  })
-
-  it('keeps a panel that does not scroll out of the competition entirely', () => {
+  it('keeps a panel that does not scroll at the height of what it holds', () => {
     render(<Panel title="checklist">content</Panel>)
 
     const region = screen.getByRole('region', { name: 'checklist' })
@@ -157,9 +139,9 @@ describe('Panel that scrolls its own body', () => {
     expect(body).toHaveClass('console-scroll')
   })
 
-  it('lets the growing panel shrink instead of pushing what sits below it off the screen', () => {
+  it('lets the panel shrink instead of pushing what sits below it off the screen', () => {
     render(
-      <Panel title="acción 1" scroll grow>
+      <Panel title="acción 1" scroll>
         <p>una opción</p>
       </Panel>,
     )
