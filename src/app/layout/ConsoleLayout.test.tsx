@@ -658,11 +658,14 @@ function slotOf(element: HTMLElement): HTMLElement {
   return slot
 }
 
-/** Every slot of the console column that is taking the leftover height right now. */
-function growingSlots(anyBox: HTMLElement): Element[] {
+const YIELDS_LAST = '[--console-yield:1]'
+const YIELDS_FIRST = '[--console-yield:1000]'
+
+/** Every slot of the console column that is the last to give up height right now. */
+function focusedSlots(anyBox: HTMLElement): Element[] {
   const column = slotOf(slotOf(anyBox))
 
-  return Array.from(column.children).filter((child) => child.classList.contains('grow'))
+  return Array.from(column.children).filter((child) => child.classList.contains(YIELDS_LAST))
 }
 
 describe('ConsoleLayout focus', () => {
@@ -673,28 +676,28 @@ describe('ConsoleLayout focus', () => {
     queryClient.clear()
   })
 
-  it('hands the leftover height to the screen while nothing is asked and nothing printed', () => {
+  it('makes the screen the last to yield while nothing is asked and nothing printed', () => {
     useSessionStore.getState().setTokens(pair)
     renderConsole('/builds')
 
     const screenSlot = slotOf(screen.getByText('the builds screen'))
     const commands = screen.getByRole('region', { name: 'comandos' })
 
-    expect(screenSlot).toHaveClass('grow')
-    expect(slotOf(commands)).toHaveClass('shrink-[1000]')
-    expect(growingSlots(commands)).toEqual([screenSlot])
+    expect(screenSlot).toHaveClass(YIELDS_LAST)
+    expect(slotOf(commands)).toHaveClass(YIELDS_FIRST)
+    expect(focusedSlots(commands)).toEqual([screenSlot])
   })
 
-  it('hands it to the question while a step is open, and to nothing else', async () => {
+  it('makes the question the last to yield while a step is open, and nothing else', async () => {
     renderConsole()
 
     await answer('login')
 
     const question = screen.getByRole('region', { name: /^Opciones:/ })
 
-    expect(slotOf(question)).toHaveClass('grow')
-    expect(slotOf(screen.getByText('the lobby screen'))).not.toHaveClass('grow')
-    expect(growingSlots(question)).toEqual([slotOf(question)])
+    expect(slotOf(question)).toHaveClass(YIELDS_LAST)
+    expect(slotOf(screen.getByText('the lobby screen'))).toHaveClass(YIELDS_FIRST)
+    expect(focusedSlots(question)).toEqual([slotOf(question)])
   })
 
   it('keeps the checklist above the question in a slot of its own that yields first', async () => {
@@ -705,16 +708,15 @@ describe('ConsoleLayout focus', () => {
     const checklist = screen.getByRole('region', { name: /^Pasos:/ })
     const question = screen.getByRole('region', { name: /^Opciones:/ })
 
-    // Its own slot, not a share of the question's: the floor of the box being worked in
-    // belongs to the options, and a long checklist must not be the one eating it.
+    // Its own slot, not a share of the question's: the checklist is never the focus, so a
+    // long run of steps gives up its height before the options do.
     expect(slotOf(checklist)).not.toBe(slotOf(question))
-    expect(slotOf(checklist)).toHaveClass('shrink-[1000]')
-    expect(slotOf(checklist)).not.toHaveClass('grow')
+    expect(slotOf(checklist)).toHaveClass(YIELDS_FIRST)
     expect(slotOf(slotOf(checklist))).toBe(slotOf(slotOf(question)))
     expect(checklist.compareDocumentPosition(question)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
-  it('hands it to the output once something printed and nothing is being asked', async () => {
+  it('makes the output the last to yield once something printed and nothing is asked', async () => {
     useSessionStore.getState().setTokens(pair)
     server.use(http.get(`${baseUrl}/leaderboard`, () => HttpResponse.json([])))
     renderConsole()
@@ -724,8 +726,8 @@ describe('ConsoleLayout focus', () => {
 
     const output = screen.getByRole('region', { name: 'salida' })
 
-    expect(slotOf(output)).toHaveClass('grow')
-    expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass('shrink-[1000]')
-    expect(growingSlots(output)).toEqual([slotOf(output)])
+    expect(slotOf(output)).toHaveClass(YIELDS_LAST)
+    expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass(YIELDS_FIRST)
+    expect(focusedSlots(output)).toEqual([slotOf(output)])
   })
 })
