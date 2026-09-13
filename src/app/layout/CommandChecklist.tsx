@@ -1,6 +1,6 @@
 import { useCommandRuntime } from '@/app/providers/command-runtime'
 import { type CommandArg, type CommandContext, type ParsedArgs } from '@/shared/commands'
-import { Panel } from '@/shared/ui'
+import { LogLine, type LogTone, Panel } from '@/shared/ui'
 
 const MASK = '••••••'
 
@@ -12,10 +12,10 @@ const MARKER: Record<StepState, string> = {
   ahead: '·',
 }
 
-const LABEL_CLASS: Record<StepState, string> = {
-  done: 'text-text-dim',
-  current: 'text-accent',
-  ahead: 'text-text-dim',
+const TONE: Record<StepState, LogTone> = {
+  done: 'dim',
+  current: 'round',
+  ahead: 'dim',
 }
 
 function stateOf(arg: CommandArg, values: ParsedArgs, awaiting: string): StepState {
@@ -78,13 +78,11 @@ export function CommandChecklist() {
               key={arg.name}
               data-state={state}
               {...(state === 'current' ? { 'aria-current': 'step' as const } : {})}
-              className="flex items-baseline gap-2"
             >
-              <span aria-hidden="true" className="min-w-[2ch] text-right text-border-strong">
-                {MARKER[state]}
-              </span>
-              <span className={`min-w-[14ch] ${LABEL_CLASS[state]}`}>{arg.label}</span>
-              {answer !== undefined && <span className="text-text">{answer}</span>}
+              <LogLine marker={MARKER[state]} tone={TONE[state]}>
+                <span className="inline-block min-w-[14ch]">{arg.label}</span>
+                {answer !== undefined && <span className="ml-2 text-text">{answer}</span>}
+              </LogLine>
             </li>
           )
         })}
