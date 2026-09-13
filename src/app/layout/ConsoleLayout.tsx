@@ -26,37 +26,37 @@ interface ConsoleStackProps {
 }
 
 /**
- * The column of boxes, and the one place that decides which of them takes the leftover
+ * The column of boxes, and the one place that decides which of them is the last to give up
  * height. It reads the runtime, so it has to live inside the provider the layout renders.
  *
- * The focus is a single value handed to every slot at once, which is what makes two boxes
- * growing at the same time impossible rather than merely discouraged.
+ * The focus is a single value handed to every slot at once. It never makes a box grow; it
+ * only decides who yields first when the column runs short, so two boxes can never both
+ * hold on to their height at the expense of the rest.
  */
 function ConsoleStack({ children }: ConsoleStackProps) {
   const { pendingStep, lastResult } = useCommandRuntime()
   const focus = focusOf(pendingStep, lastResult)
 
   return (
-    // `min-h-0` all the way down, or the focused box never gets the chance to give up
-    // height. The slots, not the boxes inside them, say how tall each one may get.
+    // `min-h-0` all the way down, or no box ever gets the chance to give up height. The
+    // slots say in which order they yield; each panel says how far down it may go.
     <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-col gap-4">
-      <ConsoleSlot grows={focus === 'screen'}>
+      <ConsoleSlot focused={focus === 'screen'}>
         <Outlet />
       </ConsoleSlot>
 
       {/* The checklist sits above the question on purpose: what is being asked reads next
           to what was already answered and what is still ahead. It is never the focus and
-          has a slot of its own, so the floor of the question belongs to the options and a
-          long run of steps is the one that yields. */}
-      <ConsoleSlot grows={false}>
+          has a slot of its own, so a long run of steps yields before the options do. */}
+      <ConsoleSlot focused={false}>
         <CommandChecklist />
       </ConsoleSlot>
 
-      <ConsoleSlot grows={focus === 'question'}>
+      <ConsoleSlot focused={focus === 'question'}>
         <CommandPanel />
       </ConsoleSlot>
 
-      <ConsoleSlot grows={focus === 'output'}>
+      <ConsoleSlot focused={focus === 'output'}>
         <CommandResultLine />
       </ConsoleSlot>
 
