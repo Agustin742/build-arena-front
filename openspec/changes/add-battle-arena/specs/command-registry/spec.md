@@ -26,7 +26,7 @@ argument it MUST behave exactly as before (silent drop); when given, it MUST als
 
 #### Scenario: Cancel with a notice prints the reason
 - GIVEN a `PendingCommand` awaiting an argument
-- WHEN an arena-level effect calls `cancelPending({ text: 'La ventana se cerró' })`
+- WHEN an arena-level effect calls `cancelPending({ message: 'La ventana se cerró' })`
 - THEN the pending command is dropped and "La ventana se cerró" prints via `announce`
 
 ## ADDED Requirements
@@ -39,7 +39,7 @@ the same as it replaces any prior result.
 
 #### Scenario: Announce prints without a command run
 - GIVEN no command is currently running
-- WHEN `announce({ text: 'X aceptó tu desafío. Escribí enter para pelear' })` is called
+- WHEN `announce({ message: 'X aceptó tu desafío. Escribí enter para pelear' })` is called
 - THEN the output box shows that text
 
 #### Scenario: Announce does not touch a pending wizard
