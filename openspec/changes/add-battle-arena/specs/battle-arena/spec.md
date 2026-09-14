@@ -168,30 +168,46 @@ initiative. On desktop the two combatant panels render side by side; on phone th
 > not solved by this change.
 
 #### Requirement: Turn Header Shows Whose Turn It Is (Slice: 1)
-The header MUST show "Tu turno" or "Turno de {rival}" from `activeUserId`, and MUST lock
-`ACTUAR` with a stated reason whenever it is not the viewer's turn.
+The header MUST show "Tu turno" or "Turno de {rival}" from `activeUserId`.
 
-##### Scenario: Own turn unlocks ACTUAR
+##### Scenario: Own turn shows "Tu turno"
 - GIVEN `activeUserId` equals the viewer
 - WHEN the header renders
-- THEN it reads "Tu turno" and `ACTUAR` is enabled
+- THEN it reads "Tu turno"
 
-##### Scenario: Opponent's turn locks ACTUAR with a reason
+##### Scenario: Opponent's turn shows their name
 - GIVEN `activeUserId` is the rival
 - WHEN the header renders
-- THEN it reads "Turno de {rival}" and `ACTUAR` is shown locked with a reason
+- THEN it reads "Turno de {rival}"
 
 ### Slice 2 — Act and See the Result in Log
 
-#### Requirement: BattleLog Narrates Events With Auto-Scroll (Slice: 2)
+#### Requirement: BattleLog Narrates Events, Sticking to the Bottom Only at Rest (Slice: 2)
 A `BattleLog` component inside `features/arena` MUST accumulate one line per event from
-`battle:turn_resolved`/`battle:round_start` `events`, in order, per the Narration Table, and
-MUST auto-scroll to the newest line.
+`battle:turn_resolved`/`battle:round_start` `events`, in order, per the Narration Table. It
+MUST follow new lines (scroll to the newest) only when the reader is already at, or within
+one line of, the bottom. The first render and any history rebuild MUST jump to the bottom
+regardless of scroll position.
 
 ##### Scenario: New turn appends narrated lines
 - GIVEN BattleLog shows prior lines
 - WHEN a `battle:turn_resolved` with non-empty `events` arrives
-- THEN one line per event appends in order, and the view scrolls to the newest
+- THEN one line per event appends in order
+
+##### Scenario: At the bottom, new lines pull the view down
+- GIVEN the reader is scrolled to the bottom
+- WHEN a new line appends
+- THEN the view scrolls to show that new line
+
+##### Scenario: Scrolled up to reread, new lines do not pull the view away
+- GIVEN the reader scrolled up, away from the bottom, to reread an earlier line
+- WHEN a new line appends
+- THEN the view stays where the reader left it
+
+##### Scenario: First render and history rebuild jump to the bottom
+- GIVEN BattleLog mounts for the first time, or its history rebuilds from `turns`
+- WHEN that render happens
+- THEN the view jumps to the bottom regardless of any prior scroll position
 
 #### Requirement: Empty `events` Reconstructs From `turns`/`combatants` (Slice: 2)
 When `battle:turn_resolved.events` is empty (idempotent re-emit), BattleLog MUST synthesize
@@ -223,6 +239,19 @@ BattleLog and any turn-derived view MUST treat `turns` as the merged history fro
 - WHEN `ACTUAR` opens
 - THEN exactly the 2 action skill codes are offered, named from the catalog
 
+#### Requirement: `ACTUAR` Locks With a Reason Off-Turn (Slice: 2)
+`ACTUAR` MUST be locked with a stated reason whenever it is not the viewer's turn.
+
+##### Scenario: Own turn unlocks ACTUAR
+- GIVEN `activeUserId` equals the viewer
+- WHEN arena command state builds
+- THEN `ACTUAR` is enabled
+
+##### Scenario: Opponent's turn locks ACTUAR with a reason
+- GIVEN `activeUserId` is the rival
+- WHEN arena command state builds
+- THEN `ACTUAR` is shown locked with a reason
+
 #### Requirement: No Ack — Wait, Then Narrate or Error (Slice: 2)
 After `battle:action`, the client MUST show "Esperando al adversario…" and lock arena
 commands. It MUST NOT print any declared/success text until the server responds; it MUST
@@ -243,6 +272,15 @@ case unlocking commands.
 - GIVEN the wait state is active
 - WHEN `battle:error` arrives
 - THEN the wait message clears, the matching error text shows, and commands unlock
+
+#### Requirement: Every Error Code Shows Spanish Text and Keeps the Session (Slice: 2)
+Every `battle:error` code MUST map to the Error Copy Table's Spanish text; showing it MUST
+NOT close the socket or end the arena session.
+
+##### Scenario: An error shows its text and the session continues
+- GIVEN a `battle:error` with code `NOT_YOUR_TURN` arrives
+- WHEN it is shown
+- THEN "No es tu turno" prints and the socket stays connected
 
 ### Slice 3 — React With Countdown
 
@@ -303,13 +341,21 @@ locked with reason "sin conexión".
 - THEN the header shows "Reconectando…" and `ACTUAR` is locked with "sin conexión"
 
 #### Requirement: Voluntary Exit Warns About the 2-Minute Forfeit (Slice: 4)
-`volver` during an in-progress battle MUST ask for confirmation warning "Si no volvés en 2
-minutos, perdés" before leaving the screen; it MUST NOT disconnect the socket.
+`volver` MUST navigate the player out of the arena screen; leaving the arena MUST close the
+socket connection (per "Exactly One Live Connection Per Mounted Battle"), which is what
+starts the server's 2-minute abandonment countdown for the rival. In an `IN_PROGRESS`
+battle, `volver` MUST ask for confirmation warning "Si no volvés en 2 minutos, perdés"
+before navigating away.
 
-##### Scenario: Confirming volver leaves the screen only
-- GIVEN an in-progress battle
+##### Scenario: Confirming volver in an in-progress battle navigates away and disconnects
+- GIVEN an `IN_PROGRESS` battle
 - WHEN the player runs `volver` and confirms
-- THEN the screen navigates away and the socket connection is not closed
+- THEN the screen navigates away and the connection closes
+
+##### Scenario: volver outside an in-progress battle needs no confirmation
+- GIVEN the battle is not `IN_PROGRESS`
+- WHEN the player runs `volver`
+- THEN it navigates away without asking for confirmation
 
 #### Requirement: Opponent Abandonment Shows the Countdown, Then the Closing Notice (Slice: 4)
 On `battle:opponent_left`, the client MUST show the rival's 2-minute countdown. When it
@@ -340,19 +386,10 @@ a `volver` command, and MUST NOT open a socket connection.
 - THEN "Esta batalla ya terminó" shows with `volver`, and no socket connects
 
 #### Requirement: `NOT_FOUND` Shows a Dedicated Exit (Slice: 4)
-A `NOT_FOUND` `battle:error`, or a REST 404 on the battle, MUST show "Esa batalla no existe
-o no es tuya" plus a `volver` command.
+A `NOT_FOUND` `battle:error`, or a battle id absent from `GET /battles`, MUST show "Esa
+batalla no existe o no es tuya" plus a `volver` command.
 
 ##### Scenario: Unknown or foreign battle exits cleanly
 - GIVEN the battle id does not exist or is not the viewer's
 - WHEN it is requested
 - THEN the `NOT_FOUND` text shows with `volver`
-
-#### Requirement: Every Error Code Shows Spanish Text and Keeps the Session (Slice: 4)
-Every `battle:error` code MUST map to the Error Copy Table's Spanish text; showing it MUST
-NOT close the socket or end the arena session.
-
-##### Scenario: An error shows its text and the session continues
-- GIVEN a `battle:error` with code `NOT_YOUR_TURN` arrives
-- WHEN it is shown
-- THEN "No es tu turno" prints and the socket stays connected
