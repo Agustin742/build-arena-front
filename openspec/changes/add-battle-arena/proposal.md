@@ -10,7 +10,7 @@ References: `docs/design/implementation-plan.md` §Fase 9, §Fase 10; `docs/desi
 
 ### In Scope (user decisions 1–20, encoded, not re-opened)
 
-- Socket composition root (`SubscribeToAccessToken` wired to the session store, mirroring `app/boot/api-client.ts`); `ConsoleLayout` feeds `battleId` / `reactionWindowOpen` from `useBattleStore`.
+- Socket composition root (`SubscribeToAccessToken` wired to the session store, mirroring `app/boot/api-client.ts`); `ConsoleLayout` takes `battleId` from the `/battles/:battleId` route and `reactionWindowOpen` from `useBattleStore` (see design D3).
 - Entry by command (2, 16A, 18A): one live battle enters directly, several open a numbered picker, `ACCEPTED` warns "Entrar arranca la batalla. ¿Seguimos?".
 - Stage (19B): per combatant name (6A), HP bar + number, conditions + rounds, reaction available, attributes, AC, initiative; two boxes side by side on desktop, stacked on phone.
 - Header "Tu turno / Turno de X" with `ACTUAR` locked with a reason (3A), "Reconectando…" + "sin conexión" (15A).
