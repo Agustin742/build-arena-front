@@ -798,4 +798,11 @@ describe('ConsoleLayout battle scope (D3)', () => {
     expect(screen.queryByText('PROBE_BATTLE')).not.toBeInTheDocument()
     expect(screen.queryByText('PROBE_REACTION-WINDOW')).not.toBeInTheDocument()
   })
+
+  it('activates the battle scope from the route before any battle:state arrives', () => {
+    renderProbe(`/battles/${BATTLE_ID}`)
+
+    expect(screen.getByText('PROBE_BATTLE')).toBeInTheDocument()
+    expect(screen.queryByText('PROBE_LOBBY')).not.toBeInTheDocument()
+  })
 })
