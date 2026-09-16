@@ -13,7 +13,7 @@ export function NavigationBridge() {
 
   useEffect(() => {
     bindNavigate((path) => {
-      navigate(path)
+      void navigate(path)
     })
 
     return () => {
