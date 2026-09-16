@@ -52,7 +52,10 @@ function clientWithBattles(battles: readonly PublicBattle[]): QueryClient {
 
 describe('createArenaCommands', () => {
   it('offers volver only in the battle scope', () => {
-    const commands = createArenaCommands({ navigation: makeNavigation(), client: new QueryClient() })
+    const commands = createArenaCommands({
+      navigation: makeNavigation(),
+      client: new QueryClient(),
+    })
     const volver = commandNamed(commands, 'volver')
 
     expect(volver.scope).toEqual(['battle'])
