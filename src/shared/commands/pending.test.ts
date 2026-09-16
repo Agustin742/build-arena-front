@@ -62,6 +62,25 @@ describe('begin', () => {
   })
 })
 
+describe('begin with autofill', () => {
+  it('autofills a step whose value is already determined by context, skipping the prompt', () => {
+    const command: Command = {
+      ...makeCommand(),
+      id: 'enter',
+      aliases: ['enter'],
+      args: [
+        { name: 'battle', kind: 'text', label: 'Batalla', required: true, autofill: () => 'battle-1' },
+      ],
+    }
+
+    expect(begin(command, {}, contextFor())).toEqual({
+      kind: 'filled',
+      command,
+      args: { battle: 'battle-1' },
+    })
+  })
+})
+
 describe('advance', () => {
   it('returns invalid and keeps the pending command unchanged on an empty value submit', () => {
     const command = makeCommand()
