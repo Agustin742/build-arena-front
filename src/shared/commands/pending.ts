@@ -69,7 +69,11 @@ function continueFrom(
   return { kind: 'filled', command, args: currentValues }
 }
 
-export function begin(command: Command, seed: ParsedArgs = {}, ctx?: CommandContext): AdvanceOutcome {
+export function begin(
+  command: Command,
+  seed: ParsedArgs = {},
+  ctx?: CommandContext,
+): AdvanceOutcome {
   return continueFrom(command, seed, 0, ctx)
 }
 

@@ -69,7 +69,13 @@ describe('begin with autofill', () => {
       id: 'enter',
       aliases: ['enter'],
       args: [
-        { name: 'battle', kind: 'text', label: 'Batalla', required: true, autofill: () => 'battle-1' },
+        {
+          name: 'battle',
+          kind: 'text',
+          label: 'Batalla',
+          required: true,
+          autofill: () => 'battle-1',
+        },
       ],
     }
 
