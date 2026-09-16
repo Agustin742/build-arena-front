@@ -79,6 +79,37 @@ describe('begin with autofill', () => {
       args: { battle: 'battle-1' },
     })
   })
+
+  it('prompts normally when autofill returns undefined (condition not met)', () => {
+    const command: Command = {
+      ...makeCommand(),
+      id: 'enter',
+      aliases: ['enter'],
+      args: [
+        {
+          name: 'battle',
+          kind: 'text',
+          label: 'Batalla',
+          required: true,
+          autofill: () => undefined,
+        },
+      ],
+    }
+
+    expect(begin(command, {}, contextFor())).toEqual({
+      kind: 'pending',
+      pending: { commandId: 'enter', values: {}, awaiting: 'battle' },
+    })
+  })
+
+  it('behaves exactly as before when a step declares no autofill', () => {
+    const command = makeCommand()
+
+    expect(begin(command, {}, contextFor())).toEqual({
+      kind: 'pending',
+      pending: { commandId: 'challenge', values: {}, awaiting: 'rival' },
+    })
+  })
 })
 
 describe('advance', () => {
