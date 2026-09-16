@@ -16,6 +16,7 @@ import { useBattleStore } from '@/shared/realtime'
 import { Countdown } from '@/shared/ui'
 
 import { AppShell } from './AppShell'
+import { NavigationBridge } from './NavigationBridge'
 
 interface ConsoleLayoutProps {
   commands: readonly Command[]
@@ -95,6 +96,8 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
 
   return (
     <CommandRuntimeProvider commands={commands} state={state}>
+      <NavigationBridge />
+
       <AppShell>
         <ConsoleStack>
           {lockedUntil !== null && (
