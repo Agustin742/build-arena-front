@@ -82,5 +82,25 @@ describe('createArenaCommands', () => {
         pending: { commandId: 'enter', values: { battle: 'battle-1' }, awaiting: 'confirm' },
       })
     })
+
+    it('opens a numbered picker when two or more battles are live', () => {
+      const client = clientWithBattles([
+        makeLiveBattle('battle-1', 'ACCEPTED'),
+        makeLiveBattle('battle-2', 'IN_PROGRESS'),
+      ])
+      const commands = createArenaCommands({ navigation: makeNavigation(), client })
+      const enter = commandNamed(commands, 'enter')
+
+      const outcome = begin(enter, {}, ctx)
+
+      expect(outcome).toEqual({
+        kind: 'pending',
+        pending: { commandId: 'enter', values: {}, awaiting: 'battle' },
+      })
+
+      const battleStep = enter.args.find((arg) => arg.name === 'battle')
+
+      expect(battleStep?.options?.(ctx, {})).toHaveLength(2)
+    })
   })
 })
