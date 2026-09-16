@@ -52,10 +52,22 @@ describe('AppRoutes', () => {
   it('keeps the console on every screen behind the session', () => {
     useSessionStore.getState().setTokens(pair)
 
+    renderAt('/')
+
+    expect(screen.getByRole('heading', { name: 'lobby' })).toBeInTheDocument()
+    expect(screen.getByText('LOGOUT')).toBeInTheDocument()
+    expect(screen.getByRole('textbox')).toBeInTheDocument()
+  })
+
+  // D3: the arena route derives the `battle` scope straight from the URL, hiding lobby
+  // commands like LOGOUT, even while this route still renders the phase 0 placeholder
+  // (ArenaRoute takes over below, once it exists).
+  it('hides lobby-only commands on the arena route, driven by the URL alone', () => {
+    useSessionStore.getState().setTokens(pair)
+
     renderAt('/battles/42')
 
-    expect(screen.getByRole('heading', { name: 'arena' })).toBeInTheDocument()
-    expect(screen.getByText('LOGOUT')).toBeInTheDocument()
+    expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument()
     expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
 
