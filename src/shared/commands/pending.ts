@@ -37,18 +37,40 @@ function nextMissingArg(
   return undefined
 }
 
-function continueFrom(command: Command, values: ParsedArgs, fromIndex: number): AdvanceOutcome {
-  const missing = nextMissingArg(command, values, fromIndex)
+/**
+ * Walks forward through steps whose value is already determined by `ctx`, filling each one
+ * without prompting, until it reaches a step that needs a real answer or runs out of steps.
+ */
+function continueFrom(
+  command: Command,
+  values: ParsedArgs,
+  fromIndex: number,
+  ctx?: CommandContext,
+): AdvanceOutcome {
+  let index = fromIndex
+  let currentValues = values
+  let missing = nextMissingArg(command, currentValues, index)
 
-  if (missing === undefined) {
-    return { kind: 'filled', command, args: values }
+  while (missing !== undefined) {
+    const filled = ctx === undefined ? undefined : missing.autofill?.(ctx, currentValues)
+
+    if (filled === undefined) {
+      return {
+        kind: 'pending',
+        pending: { commandId: command.id, values: currentValues, awaiting: missing.name },
+      }
+    }
+
+    currentValues = { ...currentValues, [missing.name]: filled }
+    index = command.args.findIndex((candidate) => candidate.name === missing?.name) + 1
+    missing = nextMissingArg(command, currentValues, index)
   }
 
-  return { kind: 'pending', pending: { commandId: command.id, values, awaiting: missing.name } }
+  return { kind: 'filled', command, args: currentValues }
 }
 
-export function begin(command: Command, seed: ParsedArgs = {}): AdvanceOutcome {
-  return continueFrom(command, seed, 0)
+export function begin(command: Command, seed: ParsedArgs = {}, ctx?: CommandContext): AdvanceOutcome {
+  return continueFrom(command, seed, 0, ctx)
 }
 
 /**
@@ -105,7 +127,7 @@ export function advance(
       return { kind: 'invalid', pending, reason: `${pending.awaiting} is required` }
     }
 
-    return continueFrom(command, pending.values, currentIndex + 1)
+    return continueFrom(command, pending.values, currentIndex + 1, ctx)
   }
 
   const raw = input.kind === 'value' ? input.raw : input.optionId
@@ -120,5 +142,10 @@ export function advance(
     return { kind: 'invalid', pending, reason: `${pending.awaiting} cannot be empty` }
   }
 
-  return continueFrom(command, { ...pending.values, [pending.awaiting]: raw }, currentIndex + 1)
+  return continueFrom(
+    command,
+    { ...pending.values, [pending.awaiting]: raw },
+    currentIndex + 1,
+    ctx,
+  )
 }
