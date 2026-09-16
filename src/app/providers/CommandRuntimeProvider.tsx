@@ -166,7 +166,7 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
       return
     }
 
-    applyOutcome(begin(outcome.command, outcome.seed))
+    applyOutcome(begin(outcome.command, outcome.seed, ctx))
   }
 
   function selectItem(id: string) {
@@ -174,7 +174,7 @@ export function CommandRuntimeProvider({ commands, state, children }: CommandRun
       const command = registry.get(id)
 
       if (command !== undefined) {
-        applyOutcome(begin(command))
+        applyOutcome(begin(command, undefined, ctx))
       }
 
       return
