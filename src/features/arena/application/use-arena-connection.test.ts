@@ -60,4 +60,23 @@ describe('useArenaConnection', () => {
 
     expect(socket.disconnect).toHaveBeenCalledTimes(1)
   })
+
+  it('keeps a single connection with no visible disconnect when the same battleId remounts', () => {
+    const socket = fakeSocket()
+    const getToken = () => TOKEN
+
+    const first = renderHook(() => {
+      useArenaConnection(socket, BATTLE_ID, getToken, true)
+    })
+
+    first.unmount()
+
+    renderHook(() => {
+      useArenaConnection(socket, BATTLE_ID, getToken, true)
+    })
+
+    expect(socket.connect).toHaveBeenCalledTimes(1)
+    expect(socket.join).toHaveBeenCalledTimes(1)
+    expect(socket.disconnect).not.toHaveBeenCalled()
+  })
 })
