@@ -45,4 +45,19 @@ describe('useArenaConnection', () => {
     expect(socket.join).toHaveBeenCalledWith(BATTLE_ID)
     expect(socket.disconnect).not.toHaveBeenCalled()
   })
+
+  it('closes the connection once the player leaves the arena route with no remount', () => {
+    vi.useFakeTimers()
+    const socket = fakeSocket()
+    const getToken = () => TOKEN
+
+    const { unmount } = renderHook(() => {
+      useArenaConnection(socket, BATTLE_ID, getToken, true)
+    })
+
+    unmount()
+    vi.runAllTimers()
+
+    expect(socket.disconnect).toHaveBeenCalledTimes(1)
+  })
 })
