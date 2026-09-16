@@ -50,7 +50,7 @@ export function useArenaConnection(
 
     const owned = ownershipBySocket.get(socket)
 
-    if (owned !== undefined && owned.battleId === battleId) {
+    if (owned?.battleId === battleId) {
       if (owned.releaseTimer !== null) {
         clearTimeout(owned.releaseTimer)
         owned.releaseTimer = null
