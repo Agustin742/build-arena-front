@@ -125,12 +125,12 @@ Spec: battle-arena "Entering a Battle by Command" (all 3 scenarios); command-reg
 autofill scenarios for `enter`'s `battle` and `confirm` steps.
 Files: `src/app/boot/arena-commands.ts` (modify), `src/features/battles/application/battle-queries.ts` (reuse live-battles list).
 
-- [ ] 1d.1 RED — exactly one live battle: `enter`'s `battle` step autofills without a picker. Commit alone.
-- [ ] 1d.2 RED — two+ live battles: `enter` opens a numbered picker. Commit alone.
-- [ ] 1d.3 RED — chosen battle is `ACCEPTED`: `confirm` step does NOT autofill, prompts "Entrar arranca la batalla. ¿Seguimos?". Commit alone.
-- [ ] 1d.4 RED — chosen battle is `IN_PROGRESS`: `confirm` step autofills, no prompt. Commit alone.
-- [ ] 1d.5 GREEN — implement `enter` (scopes `lobby`, `battles`) with `battle` and `confirm` steps using PR 1c's `autofill`; confirmed entry calls `toArena(battleId)`.
-- [ ] 1d.6 Browser verification (protocol above): A has exactly one live battle with B, runs `enter`, joins directly; separately, with two live battles, `enter` shows a picker.
+- [x] 1d.1 RED — exactly one live battle: `enter`'s `battle` step autofills without a picker. Commit alone. Confirmed failing (`no command named enter`) before GREEN.
+- [x] 1d.2 RED — two+ live battles: `enter` opens a numbered picker. Commit alone. Confirmed failing (`no command named enter`) before GREEN.
+- [x] 1d.3 RED — chosen battle is `ACCEPTED`: `confirm` step does NOT autofill, prompts "Entrar arranca la batalla. ¿Seguimos?". Commit alone. Confirmed failing (`no command named enter`) before GREEN.
+- [x] 1d.4 RED — chosen battle is `IN_PROGRESS`: `confirm` step autofills, no prompt. Commit alone. Confirmed failing (`no command named enter`) before GREEN.
+- [x] 1d.5 GREEN — implement `enter` (scopes `lobby`, `battles`) with `battle` and `confirm` steps using PR 1c's `autofill`; confirmed entry calls `toArena(battleId)`. **Deviation**: command logic lives in `features/arena/application/arena.commands.ts` (`createArenaCommands`, now taking a `client: QueryClient` dep), matching the PR 1b `volver` pattern (`app/boot/arena-commands.ts` stays the thin composition root, now wiring `queryClient`); reused `@/features/battles`'s existing `cachedBattles`, `battleOptions`, `findBattle` and `standingOf` (`standingOf(battle) === 'live'` for the ACCEPTED/IN_PROGRESS filter) instead of writing new picker/filter logic, per architecture's cross-feature-via-index rule.
+- [ ] 1d.6 Browser verification (protocol above): A has exactly one live battle with B, runs `enter`, joins directly; separately, with two live battles, `enter` shows a picker. **Blocked**: same as 1b.10 — no chrome-devtools MCP tools (nor a tool-search mechanism) were available in this apply session's toolset. No dev server was started. Needs a session with chrome-devtools MCP access to complete.
 
 ### PR 1e — `Panel`/`PanelRow` floor measuring
 Branch: `refactor/panel-row-floor` · Base: `main`
