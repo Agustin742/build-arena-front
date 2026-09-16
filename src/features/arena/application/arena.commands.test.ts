@@ -115,5 +115,19 @@ describe('createArenaCommands', () => {
         pending: { commandId: 'enter', values: { battle: 'battle-1' }, awaiting: 'confirm' },
       })
     })
+
+    it('autofills confirm with no prompt when the chosen battle is IN_PROGRESS', () => {
+      const client = clientWithBattles([makeLiveBattle('battle-1', 'IN_PROGRESS')])
+      const commands = createArenaCommands({ navigation: makeNavigation(), client })
+      const enter = commandNamed(commands, 'enter')
+
+      const outcome = begin(enter, { battle: 'battle-1' }, ctx)
+
+      expect(outcome).toEqual({
+        kind: 'filled',
+        command: enter,
+        args: { battle: 'battle-1', confirm: 'yes' },
+      })
+    })
   })
 })
