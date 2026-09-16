@@ -1,5 +1,5 @@
 import { type ReactNode, useMemo } from 'react'
-import { Outlet } from 'react-router'
+import { Outlet, useMatch } from 'react-router'
 
 import { CommandChecklist } from '@/app/layout/CommandChecklist'
 import { CommandPanel } from '@/app/layout/CommandPanel'
@@ -12,6 +12,7 @@ import { CommandRuntimeProvider } from '@/app/providers/CommandRuntimeProvider'
 import { useMenuStore } from '@/app/providers/menu.store'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { type Command, type CommandState } from '@/shared/commands'
+import { useBattleStore } from '@/shared/realtime'
 import { Countdown } from '@/shared/ui'
 
 import { AppShell } from './AppShell'
@@ -75,14 +76,21 @@ export function ConsoleLayout({ commands }: ConsoleLayoutProps) {
   const release = useThrottleStore((throttle) => throttle.release)
   const windowMs = useThrottleStore((throttle) => throttle.windowMs)
 
+  // The store's battleId only arrives after battle:state, so the scope has to come from the
+  // route instead (D3): otherwise lobby commands would stay reachable while still
+  // connecting, or on a NOT_FOUND error, with no battle:state ever having arrived.
+  const arenaMatch = useMatch('/battles/:battleId')
+  const battleId = arenaMatch?.params.battleId ?? null
+  const openWindow = useBattleStore((battle) => battle.openWindow)
+
   const state = useMemo<CommandState>(
     () => ({
       isAuthenticated: accessToken !== null && refreshToken !== null,
-      battleId: null,
-      reactionWindowOpen: false,
+      battleId,
+      reactionWindowOpen: battleId !== null && openWindow !== null,
       menu,
     }),
-    [accessToken, menu, refreshToken],
+    [accessToken, battleId, menu, openWindow, refreshToken],
   )
 
   return (
