@@ -61,6 +61,12 @@ export interface CommandArg {
    * needs them: the kit can only be filtered by the attributes the player just chose.
    */
   options?: ((ctx: CommandContext, values: ParsedArgs) => CommandOption[]) | undefined
+  /**
+   * Supplies this step's value from context when it is already determined without
+   * ambiguity, so the player is never asked something the console already knows. Returns
+   * `undefined` when the condition to skip is not met, falling back to the ordinary prompt.
+   */
+  autofill?: ((ctx: CommandContext, values: ParsedArgs) => string | undefined) | undefined
 }
 
 export type ParsedArgs = Readonly<Record<string, string>>
