@@ -332,6 +332,35 @@ describe('createBattleSocket', () => {
     })
   })
 
+  describe('W1: join() clears a previous ended before reset() fires', () => {
+    it('clears ended when joining a different battle after the prior one ended', () => {
+      const { adapter, sock } = setup()
+      const BATTLE_B = '55555555-5555-4555-8555-555555555555'
+
+      adapter.connect(TOKEN_A)
+      adapter.join(BATTLE_A)
+      sock.fire('connect')
+      sock.fire('battle:state', statePayload())
+      sock.fire('battle:ended', {
+        battleId: BATTLE_A,
+        winnerId: USER_A,
+        reason: 'DEFEAT',
+        endedAt: '2026-09-07T12:10:00.000Z',
+        ranked: true,
+        ratingChanges: [
+          { userId: USER_A, before: 1200, change: 16, after: 1216 },
+          { userId: USER_B, before: 1200, change: -16, after: 1184 },
+        ],
+      })
+
+      expect(useBattleStore.getState().ended?.winnerId).toBe(USER_A)
+
+      adapter.join(BATTLE_B)
+
+      expect(useBattleStore.getState().ended).toBeNull()
+    })
+  })
+
   describe('acceptance: scripted event sequence (frontend-guide.md §7)', () => {
     it('leaves the store as the guide describes, including a reconnect that closes and later reopens the window', () => {
       const { adapter, sock } = setup()
