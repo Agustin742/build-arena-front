@@ -817,4 +817,13 @@ describe('ConsoleLayout battle scope (D3)', () => {
     expect(screen.getByText('PROBE_BATTLE')).toBeInTheDocument()
     expect(screen.queryByText('PROBE_LOBBY')).not.toBeInTheDocument()
   })
+
+  it("keeps reactionWindowOpen following the store's open reaction window while on the route", () => {
+    useBattleStore.getState().applyReactionWindow({ battleId: BATTLE_ID, ...WINDOW })
+
+    renderProbe(`/battles/${BATTLE_ID}`)
+
+    expect(screen.getByText('PROBE_REACTION-WINDOW')).toBeInTheDocument()
+    expect(screen.getByText('PROBE_BATTLE')).toBeInTheDocument()
+  })
 })
