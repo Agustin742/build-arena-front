@@ -111,13 +111,13 @@ Spec: command-registry "A Pending Step Autofills When Its Value Is Already Deter
 Context" — only the generic scenario ("a step without autofill behaves exactly as today").
 Files: `src/shared/commands/types.ts`, `src/shared/commands/pending.ts`, `src/app/providers/CommandRuntimeProvider.tsx`, `src/app/providers/command-runtime.ts`.
 
-- [ ] 1c.1 RED — `pending.test.ts`: a fixture step with an `autofill` returning a value skips the prompt when `begin` runs. Commit alone.
-- [ ] 1c.2 RED — `pending.test.ts`: a fixture step with an `autofill` returning `undefined` prompts normally (condition not met). Commit alone.
-- [ ] 1c.3 RED — `pending.test.ts`: a step with no `autofill` behaves exactly as before (regression guard). Commit alone.
-- [ ] 1c.4 GREEN — add `CommandArg.autofill?: (ctx, values) => string | undefined` to `types.ts`.
-- [ ] 1c.5 GREEN — `begin` and `advance` in `pending.ts` call `autofill` before prompting; both take a new `ctx` argument (D7).
-- [ ] 1c.6 GREEN — `command-runtime.ts` / `CommandRuntimeProvider.tsx`: thread `ctx` into `begin(...)`.
-- [ ] 1c.7 No browser verification — inert per design (nothing wires `ctx`/autofill into a real command yet).
+- [x] 1c.1 RED — `pending.test.ts`: a fixture step with an `autofill` returning a value skips the prompt when `begin` runs. Commit alone. Confirmed failing (`begin` returned `pending`, expected `filled`) before the GREEN commit.
+- [x] 1c.2 RED — `pending.test.ts`: a fixture step with an `autofill` returning `undefined` prompts normally (condition not met). Commit alone. **Deviation**: passed immediately (owed coverage, same pattern as 1a.1/1a.5/1a.7/1b.1) — `begin` already returned `pending` for an unhandled step before autofill existed.
+- [x] 1c.3 RED — `pending.test.ts`: a step with no `autofill` behaves exactly as before (regression guard). Commit alone. **Deviation**: passed immediately — same owed-coverage pattern, existing behavior unaffected by the new optional `ctx` parameter.
+- [x] 1c.4 GREEN — add `CommandArg.autofill?: (ctx, values) => string | undefined` to `types.ts`.
+- [x] 1c.5 GREEN — `begin` and `advance` in `pending.ts` call `autofill` before prompting; both take a new `ctx` argument (D7). **Deviation**: `ctx` is an optional third parameter (not required) on `begin`, so every pre-existing call site in `pending.test.ts` keeps compiling and passing unchanged; `advance` already took `ctx` from before this PR.
+- [x] 1c.6 GREEN — `CommandRuntimeProvider.tsx`: thread `ctx` into both `begin(...)` call sites (`handleResolveOutcome`, `selectItem`). `command-runtime.ts` needed no change (it only defines the context/type, no `begin` call).
+- [x] 1c.7 No browser verification — inert per design (nothing wires `ctx`/autofill into a real command yet).
 
 ### PR 1d — `enter` command (picker + autofill + ACCEPTED confirm)
 Branch: `feat/arena-enter-command` · Base: `main`
