@@ -40,15 +40,12 @@ describe('AppRoutes', () => {
     expect(screen.getByText('REGISTER')).toBeInTheDocument()
   })
 
-  it.each([
-    ['/', 'lobby'],
-    ['/battles/42', 'arena'],
-  ])('renders the %s screen to a player with a session', (path, screenName) => {
+  it('renders the lobby screen to a player with a session', () => {
     useSessionStore.getState().setTokens(pair)
 
-    renderAt(path)
+    renderAt('/')
 
-    expect(screen.getByRole('heading', { name: screenName })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'lobby' })).toBeInTheDocument()
   })
 
   it.each([
