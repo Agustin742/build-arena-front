@@ -805,4 +805,16 @@ describe('ConsoleLayout battle scope (D3)', () => {
     expect(screen.getByText('PROBE_BATTLE')).toBeInTheDocument()
     expect(screen.queryByText('PROBE_LOBBY')).not.toBeInTheDocument()
   })
+
+  it('keeps the battle scope active on a NOT_FOUND error that arrives before any battle:state', () => {
+    useBattleStore.getState().applyError({
+      code: 'NOT_FOUND',
+      message: 'Esa batalla no existe o no es tuya',
+    })
+
+    renderProbe(`/battles/${BATTLE_ID}`)
+
+    expect(screen.getByText('PROBE_BATTLE')).toBeInTheDocument()
+    expect(screen.queryByText('PROBE_LOBBY')).not.toBeInTheDocument()
+  })
 })
