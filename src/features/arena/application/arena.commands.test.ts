@@ -102,5 +102,18 @@ describe('createArenaCommands', () => {
 
       expect(battleStep?.options?.(ctx, {})).toHaveLength(2)
     })
+
+    it('does not autofill confirm and prompts when the chosen battle is ACCEPTED', () => {
+      const client = clientWithBattles([makeLiveBattle('battle-1', 'ACCEPTED')])
+      const commands = createArenaCommands({ navigation: makeNavigation(), client })
+      const enter = commandNamed(commands, 'enter')
+
+      const outcome = begin(enter, { battle: 'battle-1' }, ctx)
+
+      expect(outcome).toEqual({
+        kind: 'pending',
+        pending: { commandId: 'enter', values: { battle: 'battle-1' }, awaiting: 'confirm' },
+      })
+    })
   })
 })
