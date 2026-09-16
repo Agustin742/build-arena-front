@@ -9,7 +9,9 @@ import { queryClient } from '@/app/boot/query-client'
 import { useMenuStore } from '@/app/providers/menu.store'
 import { useSessionStore, useThrottleStore } from '@/features/auth'
 import { SKILLS_QUERY_KEY } from '@/features/skills'
-import { type PublicSkill, type SkillCatalog } from '@/shared/contracts'
+import { type Command } from '@/shared/commands'
+import { type PublicSkill, type SkillCatalog, type WindowView } from '@/shared/contracts'
+import { useBattleStore } from '@/shared/realtime'
 import { server } from '@/test/msw/server'
 
 import { ConsoleLayout } from './ConsoleLayout'
@@ -127,6 +129,7 @@ describe('ConsoleLayout', () => {
     useSessionStore.getState().clear()
     useThrottleStore.getState().release()
     useMenuStore.getState().close()
+    useBattleStore.getState().reset()
     queryClient.clear()
   })
 
@@ -673,6 +676,7 @@ describe('ConsoleLayout focus', () => {
     useSessionStore.getState().clear()
     useThrottleStore.getState().release()
     useMenuStore.getState().close()
+    useBattleStore.getState().reset()
     queryClient.clear()
   })
 
@@ -729,5 +733,69 @@ describe('ConsoleLayout focus', () => {
     expect(slotOf(output)).toHaveClass(YIELDS_LAST)
     expect(slotOf(screen.getByRole('region', { name: 'comandos' }))).toHaveClass(YIELDS_FIRST)
     expect(focusedSlots(output)).toEqual([slotOf(output)])
+  })
+})
+
+/**
+ * D3: `ConsoleLayout` derives `battleId` from the route, not from `useBattleStore`, so the
+ * `battle` scope is active from the arena route's first render — before `battle:state` ever
+ * arrives. Fixture commands, one per scope, stand in for real commands that do not exist
+ * yet at this PR, so these tests only prove which scopes are active.
+ */
+const BATTLE_ID = '6a5b4c3d-2e1f-4a9b-8c7d-6e5f4a3b2c1d'
+
+const WINDOW: WindowView = {
+  round: 1,
+  actorUserId: rival.id,
+  actionSkillCode: 'PARRY',
+  deadline: '2026-09-08T10:15:15.000Z',
+  remainingMs: 15_000,
+  applicableSkillCodes: ['PARRY'],
+}
+
+function probeCommand(scope: 'lobby' | 'battle' | 'reaction-window'): Command {
+  return {
+    id: `probe-${scope}`,
+    label: `PROBE_${scope.toUpperCase()}`,
+    aliases: [`probe-${scope}`],
+    args: [],
+    scope: [scope],
+    availability: () => ({ enabled: true }),
+    run: () => Promise.resolve({ status: 'ok' }),
+  }
+}
+
+const probeCommands: readonly Command[] = [
+  probeCommand('lobby'),
+  probeCommand('battle'),
+  probeCommand('reaction-window'),
+]
+
+function renderProbe(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route element={<ConsoleLayout commands={probeCommands} />}>
+          <Route path="/lobby" element={<p>the lobby screen</p>} />
+          <Route path="/battles/:battleId" element={<p>the arena screen</p>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
+describe('ConsoleLayout battle scope (D3)', () => {
+  beforeEach(() => {
+    useSessionStore.getState().clear()
+    useBattleStore.getState().reset()
+    useSessionStore.getState().setTokens(pair)
+  })
+
+  it('keeps battleId null and reactionWindowOpen false off the arena route (regression guard)', () => {
+    renderProbe('/lobby')
+
+    expect(screen.getByText('PROBE_LOBBY')).toBeInTheDocument()
+    expect(screen.queryByText('PROBE_BATTLE')).not.toBeInTheDocument()
+    expect(screen.queryByText('PROBE_REACTION-WINDOW')).not.toBeInTheDocument()
   })
 })
