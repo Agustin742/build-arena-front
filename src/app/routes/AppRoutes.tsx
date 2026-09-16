@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router'
 import { gameCommands } from '@/app/boot/game-commands'
 import { AppShell } from '@/app/layout/AppShell'
 import { ConsoleLayout } from '@/app/layout/ConsoleLayout'
+import { ArenaRoute } from '@/app/routes/ArenaRoute'
 import { DesignScreen } from '@/app/routes/DesignScreen'
 import { GuestOnly } from '@/app/routes/GuestOnly'
 import { RequireSession } from '@/app/routes/RequireSession'
@@ -11,15 +12,9 @@ import { ScreenPlaceholder } from '@/app/routes/ScreenPlaceholder'
 /**
  * No route for builds, friends, battles or the ranking: every one of those turned out to
  * be a command, and they are read and written from the console without ever leaving the
- * lobby. The placeholders that used to sit here promised screens nobody was going to write.
- *
- * The arena stays, because a battle is the one thing that is not a list: it is a place the
- * player is in, with its own address, and phase 9 fills it in.
+ * lobby. The placeholder that used to sit here promised a screen nobody was going to write.
  */
-const PROTECTED_SCREENS = [
-  { path: undefined, name: 'lobby' },
-  { path: '/battles/:battleId', name: 'arena' },
-] as const
+const PROTECTED_SCREENS = [{ path: undefined, name: 'lobby' }] as const
 
 export function AppRoutes() {
   return (
@@ -41,6 +36,17 @@ export function AppRoutes() {
             <Route key={name} path={path} element={element} />
           )
         })}
+
+        {/* A battle is the one thing that is not a list: it is a place the player is in,
+            with its own address, so it keeps a real route instead of becoming a command. */}
+        <Route
+          path="/battles/:battleId"
+          element={
+            <RequireSession>
+              <ArenaRoute />
+            </RequireSession>
+          }
+        />
 
         <Route path="*" element={<ScreenPlaceholder name="not found" />} />
       </Route>
