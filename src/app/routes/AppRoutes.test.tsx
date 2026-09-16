@@ -1,10 +1,22 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useSessionStore } from '@/features/auth'
 
 import { AppRoutes } from './AppRoutes'
+
+// AppRoutes tests exercise routing, not the socket. ArenaRoute connects a real singleton by
+// default, and nothing here should open an actual websocket.
+vi.mock('@/app/boot/battle-socket', () => ({
+  battleSocket: {
+    connect: vi.fn(),
+    join: vi.fn(),
+    declareAction: vi.fn(),
+    declareReaction: vi.fn(),
+    disconnect: vi.fn(),
+  },
+}))
 
 const pair = { accessToken: 'access-1', refreshToken: 'refresh-1' }
 
@@ -69,6 +81,15 @@ describe('AppRoutes', () => {
 
     expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument()
     expect(screen.getByRole('textbox')).toBeInTheDocument()
+  })
+
+  it('mounts the arena route at /battles/:battleId for a player with a session', () => {
+    useSessionStore.getState().setTokens(pair)
+
+    renderAt('/battles/42')
+
+    expect(screen.getByText('Conectando…')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'arena' })).not.toBeInTheDocument()
   })
 
   it('renders a not found screen for an unknown deep route', () => {
