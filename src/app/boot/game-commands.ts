@@ -1,5 +1,6 @@
 import { type Command } from '@/shared/commands'
 
+import { arenaCommands } from './arena-commands'
 import { authCommands } from './auth-commands'
 import { battleCommands } from './battle-commands'
 import { buildCommands } from './build-commands'
@@ -15,4 +16,5 @@ export const gameCommands: readonly Command[] = [
   ...leaderboardCommands,
   ...friendshipCommands,
   ...battleCommands,
+  ...arenaCommands,
 ]
