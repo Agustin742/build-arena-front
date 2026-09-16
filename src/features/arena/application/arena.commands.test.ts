@@ -1,6 +1,9 @@
+import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 
-import { type CommandContext } from '@/shared/commands'
+import { BATTLES_QUERY_KEY } from '@/features/battles'
+import { begin, type CommandContext } from '@/shared/commands'
+import { type PublicBattle } from '@/shared/contracts'
 
 import { createArenaCommands } from './arena.commands'
 import { type ArenaNavigation } from './ports'
@@ -25,9 +28,31 @@ function commandNamed(commands: ReturnType<typeof createArenaCommands>, id: stri
   return found
 }
 
+function makeLiveBattle(id: string, status: PublicBattle['status']): PublicBattle {
+  return {
+    id,
+    status,
+    ranked: true,
+    role: 'CHALLENGER',
+    rival: { id: `rival-${id}`, username: `rival-${id}`, rating: 1000 },
+    outcome: null,
+    currentRound: 1,
+    createdAt: '2026-09-01T00:00:00.000Z',
+    startedAt: '2026-09-01T00:00:00.000Z',
+    endedAt: null,
+  }
+}
+
+function clientWithBattles(battles: readonly PublicBattle[]): QueryClient {
+  const client = new QueryClient()
+  client.setQueryData(BATTLES_QUERY_KEY, battles)
+
+  return client
+}
+
 describe('createArenaCommands', () => {
   it('offers volver only in the battle scope', () => {
-    const commands = createArenaCommands({ navigation: makeNavigation() })
+    const commands = createArenaCommands({ navigation: makeNavigation(), client: new QueryClient() })
     const volver = commandNamed(commands, 'volver')
 
     expect(volver.scope).toEqual(['battle'])
@@ -35,12 +60,27 @@ describe('createArenaCommands', () => {
 
   it('sends the player back to the lobby when volver runs, with no confirmation yet', async () => {
     const navigation = makeNavigation()
-    const commands = createArenaCommands({ navigation })
+    const commands = createArenaCommands({ navigation, client: new QueryClient() })
     const volver = commandNamed(commands, 'volver')
 
     const result = await volver.run({}, ctx)
 
     expect(navigation.toLobby).toHaveBeenCalledTimes(1)
     expect(result.status).toBe('ok')
+  })
+
+  describe('enter', () => {
+    it('autofills the battle step without a picker when exactly one battle is live', () => {
+      const client = clientWithBattles([makeLiveBattle('battle-1', 'ACCEPTED')])
+      const commands = createArenaCommands({ navigation: makeNavigation(), client })
+      const enter = commandNamed(commands, 'enter')
+
+      const outcome = begin(enter, {}, ctx)
+
+      expect(outcome).toEqual({
+        kind: 'pending',
+        pending: { commandId: 'enter', values: { battle: 'battle-1' }, awaiting: 'confirm' },
+      })
+    })
   })
 })
