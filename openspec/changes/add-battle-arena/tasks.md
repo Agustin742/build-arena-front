@@ -94,16 +94,16 @@ Branch: `feat/arena-route-scope` · Base: `main`
 Spec: battle-arena "`ConsoleLayout` Derives Battle Scope From the Route" (all 4 scenarios).
 Files: `src/app/layout/ConsoleLayout.tsx`, `src/app/layout/NavigationBridge.tsx` (new), `src/features/arena/application/ports.ts` (new), `src/app/boot/navigation.ts` (new), `src/app/boot/arena-commands.ts` (new, `volver` only), `src/app/routes/AppRoutes.tsx`, `src/app/routes/ArenaRoute.tsx` (new).
 
-- [ ] 1b.1 RED — off the arena route, `battleId` is `null` and `reactionWindowOpen` is `false` (regression guard). Commit alone.
-- [ ] 1b.2 RED — on `/battles/:id` with no `battle:state` yet, `battle` scope is already active, driven by `useMatch`, not the store (D3). Commit alone.
-- [ ] 1b.3 RED — `battle` scope stays active on a `NOT_FOUND` error before any state. Commit alone.
-- [ ] 1b.4 RED — `reactionWindowOpen` still follows the store's open window while on the route. Commit alone.
-- [ ] 1b.5 GREEN — `ConsoleLayout` reads `useMatch('/battles/:battleId')` for `battleId` (D3); passes all four RED tests.
-- [ ] 1b.6 GREEN — `ArenaNavigation` port in `features/arena/application/ports.ts`; `app/boot/navigation.ts` implements it; `NavigationBridge` inside `ConsoleLayout` supplies `useNavigate` (D8).
-- [ ] 1b.7 GREEN — `ArenaRoute` renders `<ScreenPlaceholder>`-replacing text ("Conectando…"/"Conectado") and calls `useArenaConnection` (PR 1a's hook, now consumed for the first time).
-- [ ] 1b.8 GREEN — minimal `volver` command (scope `battle`) that calls `toLobby()`, no confirmation logic yet (added in PR 4b).
-- [ ] 1b.9 GREEN — `AppRoutes.tsx`: `/battles/:battleId` renders `ArenaRoute` instead of the placeholder.
-- [ ] 1b.10 Browser verification (protocol above): both accounts open `/battles/:id` for a live battle, see "Conectando…" then "Conectado"; run `volver`, confirm it returns to the lobby with no confirmation prompt. Screenshot at all 3 viewports.
+- [x] 1b.1 RED — off the arena route, `battleId` is `null` and `reactionWindowOpen` is `false` (regression guard). Commit alone. **Deviation**: passed immediately against the current hardcoded implementation (owed coverage, not a failed RED, same pattern as 1a.1/1a.5/1a.7).
+- [x] 1b.2 RED — on `/battles/:id` with no `battle:state` yet, `battle` scope is already active, driven by `useMatch`, not the store (D3). Commit alone.
+- [x] 1b.3 RED — `battle` scope stays active on a `NOT_FOUND` error before any state. Commit alone.
+- [x] 1b.4 RED — `reactionWindowOpen` still follows the store's open window while on the route. Commit alone.
+- [x] 1b.5 GREEN — `ConsoleLayout` reads `useMatch('/battles/:battleId')` for `battleId` (D3); passes all four RED tests.
+- [x] 1b.6 GREEN — `ArenaNavigation` port in `features/arena/application/ports.ts`; `app/boot/navigation.ts` implements it; `NavigationBridge` inside `ConsoleLayout` supplies `useNavigate` (D8). **Deviation**: also created `features/arena/index.ts` (originally scheduled for PR 1g) — the `no-restricted-imports` rule forbids deep `@/features/*/*` imports, and both `ArenaRoute` and `app/boot/arena-commands.ts` need to consume the feature from outside it.
+- [x] 1b.7 GREEN — `ArenaRoute` renders `<ScreenPlaceholder>`-replacing text ("Conectando…"/"Conectado") and calls `useArenaConnection` (PR 1a's hook, now consumed for the first time). **Deviation**: `socket`/`getToken` are injectable props defaulting to the real singleton and the session store, matching the `HealthGate`/`CatalogGate` DI pattern — needed to keep the component testable without a real websocket.
+- [x] 1b.8 GREEN — minimal `volver` command (scope `battle`) that calls `toLobby()`, no confirmation logic yet (added in PR 4b). **Deviation**: the command logic lives in `features/arena/application/arena.commands.ts` (`createArenaCommands`, DI'd and unit-testable, per design's own file table), with `app/boot/arena-commands.ts` as the thin untested composition root — mirrors `battle-commands.ts`/`createBattlesCommands`.
+- [x] 1b.9 GREEN — `AppRoutes.tsx`: `/battles/:battleId` renders `ArenaRoute` instead of the placeholder.
+- [ ] 1b.10 Browser verification (protocol above): both accounts open `/battles/:id` for a live battle, see "Conectando…" then "Conectado"; run `volver`, confirm it returns to the lobby with no confirmation prompt. Screenshot at all 3 viewports. **Blocked**: the chrome-devtools MCP tools (and `ToolSearch`) were not available in the apply session's toolset, so this could not be attempted. The local API and dev server were started and confirmed healthy (both cleanly stopped afterward, `pnpm exec vitest run`/`typecheck`/`lint` all still green), but no browser interaction was possible. Needs a session with chrome-devtools MCP access to complete.
 
 ### PR 1c — Autofill engine (generic, no consumer yet)
 Branch: `feat/arena-autofill-engine` · Base: `main`
