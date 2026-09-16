@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -26,7 +26,9 @@ describe('NavigationBridge', () => {
   it('hands the router navigate function to the ArenaNavigation port on mount', () => {
     renderAt('/battles/42')
 
-    navigation.toLobby()
+    act(() => {
+      navigation.toLobby()
+    })
 
     expect(screen.getByText('the lobby screen')).toBeInTheDocument()
   })
@@ -34,7 +36,9 @@ describe('NavigationBridge', () => {
   it('sends the arena navigation to the given battle', () => {
     renderAt('/')
 
-    navigation.toArena('42')
+    act(() => {
+      navigation.toArena('42')
+    })
 
     expect(screen.getByText('the arena screen')).toBeInTheDocument()
   })
