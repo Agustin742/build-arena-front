@@ -78,16 +78,16 @@ Spec: battle-arena "Exactly One Live Connection Per Mounted Battle" (all 3 scena
 `battle-realtime` W1 debt (`join()` → `reset()` clears a previous `ended`).
 Files: `src/app/boot/battle-socket.ts` (new), `src/features/arena/application/use-arena-connection.ts` (new), `src/shared/realtime/battle-socket.test.ts` (modify).
 
-- [ ] 1a.1 RED — `battle-socket.test.ts`: `join()` after a prior `ended` clears it before `reset()` fires (W1). Commit alone.
-- [ ] 1a.2 GREEN — implement/fix `reset()` ordering so the test passes.
-- [ ] 1a.3 RED — `use-arena-connection.test.ts`: mount effect invoked twice synchronously (StrictMode) yields exactly one `connect`+`join`. Commit alone.
-- [ ] 1a.4 GREEN — `useArenaConnection(socket, battleId, getToken, enabled)` with a ref guard.
-- [ ] 1a.5 RED — leaving the route (unmount) closes the connection; commit alone.
-- [ ] 1a.6 GREEN — cleanup calls `disconnect` directly (no timer needed on a real leave, since remount clears the deferred path below).
-- [ ] 1a.7 RED — same-`battleId` remount without leaving keeps a single connection, no visible disconnect. Commit alone.
-- [ ] 1a.8 GREEN — deferred release: cleanup schedules `setTimeout(disconnect, 0)`; a remount with the same id clears that timer before it fires.
-- [ ] 1a.9 `src/app/boot/battle-socket.ts`: `createBattleSocket({ url, subscribeToAccessToken })` wired to `useSessionStore.subscribe`, forwarding only on `accessToken` change (D1).
-- [ ] 1a.10 No browser verification — the hook has no importer yet (matches design's "No" for 1a).
+- [x] 1a.1 RED — `battle-socket.test.ts`: `join()` after a prior `ended` clears it before `reset()` fires (W1). Commit alone. **Deviation**: this passed immediately against current code (15/15 green) — owed coverage, not a failed RED. Committed as `test(realtime): ...` alone.
+- [x] 1a.2 GREEN — implement/fix `reset()` ordering so the test passes. **Skipped**: no production change needed; behavior already existed per Phase 8 (`join()` already calls `reset()` when `battleId !== joinedBattleId`).
+- [x] 1a.3 RED — `use-arena-connection.test.ts`: mount effect invoked twice synchronously (StrictMode) yields exactly one `connect`+`join`. Commit alone.
+- [x] 1a.4 GREEN — `useArenaConnection(socket, battleId, getToken, enabled)` with a ref guard. **Deviation**: implemented D2's full deferred-release mechanism directly instead of a plain ref guard, per explicit instruction (a plain ref flag is documented to leave the socket disconnected under StrictMode).
+- [x] 1a.5 RED — leaving the route (unmount) closes the connection; commit alone. **Deviation**: passed immediately against the 1a.4 implementation — owed coverage, not a failed RED.
+- [x] 1a.6 GREEN — cleanup calls `disconnect` directly (no timer needed on a real leave, since remount clears the deferred path below). **Skipped**: already satisfied by 1a.4's deferred-release mechanism; no separate production change.
+- [x] 1a.7 RED — same-`battleId` remount without leaving keeps a single connection, no visible disconnect. Commit alone. **Deviation**: passed immediately against the 1a.4 implementation — owed coverage, not a failed RED.
+- [x] 1a.8 GREEN — deferred release: cleanup schedules `setTimeout(disconnect, 0)`; a remount with the same id clears that timer before it fires. **Skipped**: already implemented at 1a.4 (module-scoped `WeakMap<BattleSocket, ...>` ownership, not `useRef`, since a genuine route unmount+remount destroys refs but the design's own scenario 3 requires state to survive it).
+- [x] 1a.9 `src/app/boot/battle-socket.ts`: `createBattleSocket({ url, subscribeToAccessToken })` wired to `useSessionStore.subscribe`, forwarding only on `accessToken` change (D1).
+- [x] 1a.10 No browser verification — the hook has no importer yet (matches design's "No" for 1a).
 
 ### PR 1b — Route scope, navigation port, basic `volver`, connecting screen
 Branch: `feat/arena-route-scope` · Base: `main`
